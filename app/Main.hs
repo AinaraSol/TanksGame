@@ -18,7 +18,6 @@ import Graphics.Gloss.Juicy
 import System.Random(randomRIO)
 
 import Data.Maybe
-import Entities (GameState(worldSize))
 
 numTanks :: Int
 numTanks = 8
