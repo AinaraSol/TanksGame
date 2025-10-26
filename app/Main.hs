@@ -64,7 +64,7 @@ newTank id = do
     turretMaybePicture <- loadJuicyPNG ("assets/Boat/Cannon.png")
     rx <- randomRIO(-size, size)
     ry <- randomRIO(-size, size)
-    botAsigna <- randomRIO(0,2)
+    botAsigna <- randomRIO(0,3)
     let
         tankId = id
         tankPicture = fromJust tankMaybePicture
@@ -101,9 +101,10 @@ updateGame dt gameState =
         let
             --Tomamos unas actions por cada tanque
             actions = map (\t -> 
-                let bot = case fromMaybe 2 (join(readMemoryInt "bot" (memory t))) of
+                let bot = case fromMaybe 3 (join(readMemoryInt "bot" (memory t))) of
                             0 -> aggressiveBot gameState t -- Elegimos Bot aggressive segun el parametro de la memoria
                             1 -> opportunistBot gameState t -- Elegimos Bot opportunist segun el parametro de la memoria
+                            2 -> circleBot gameState t -- Elegimos Bot que se mueve en circulo segun el parametro de la memoria
                             _ -> chaserBot gameState t -- Elegimos Bot chaserBot segun el parametro de la memoria
                 in handleActions t bot 
               ) (tanks gameState)

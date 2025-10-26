@@ -7,6 +7,7 @@ import Tank
 import Data.List (minimumBy)
 import Data.Maybe (fromMaybe)
 import Data.Ord (comparing)
+import Collisions
 
 
 -- Para estrategia 1
@@ -77,8 +78,6 @@ opportunistBot game self =
          else [Rotate degAngle, Move vec]
 
 --Bot de Ejemplo 3 (Chaser)
--- Bot que persigue directamente al enemigo más cercano
---Bot de Ejemplo 3 (Chaser)
 -- Bot que persigue directamente al enemigo más cercano, solo colisiones
 chaserBot :: Bot
 chaserBot game self =
@@ -93,3 +92,36 @@ chaserBot game self =
           vec = (cos radAngle * tankSpeed, sin radAngle * tankSpeed)
       in [Rotate degAngle, Move vec]  -- solo gira y se mueve hacia el enemigo
 
+--Bots de Ejemplo 4 
+-- Bot que se mueve en círculos y dispara hacia el centro del mapa
+circleBot :: GameState -> Tank -> [Action]
+circleBot game tank =
+    let
+        -- Posición actual del tanque
+        (x, y) = position (tankBaseObject tank)
+
+        -- Definimos el centro del mapa 
+        center = (0, 0)
+
+        -- Vector desde el tanque hacia el centro
+        dirToCenter = sub center (x, y)
+
+        -- Vector tangente (dirección perpendicular para moverse en círculo)
+        tangent = perp dirToCenter
+        tangentDir = normalize tangent
+
+        -- Velocidad de movimiento
+        moveSpeed = 10.0
+        moveVec = (fst tangentDir * moveSpeed, snd tangentDir * moveSpeed)
+
+        -- Ángulo de la torreta apuntando hacia el centro
+        turretAngle = angleToTarget (x, y) center
+
+        -- Acciones: moverse + girar torreta + disparar si puede
+        actions =
+            [ Move moveVec
+            , Rotate turretAngle
+            , Shoot center
+            ]
+    in
+        actions
