@@ -6,7 +6,7 @@ import Graphics.Gloss.Data.Picture (Picture)
 type Bot = GameState -> Tank -> [Action]
 
 -- Action: Acciones que puede realizar un tanque
-data Action = Move Vector | Shoot Position  |  Rotate Angle  | Stay
+data Action = Move Vector | Shoot Position  |  Rotate Angle  | Stay | UpdateMemory String MemoryValue --MODIFICADO
     deriving (Show, Eq)
 
 -- Tipos de Datos necesarios --

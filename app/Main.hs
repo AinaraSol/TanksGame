@@ -1,6 +1,6 @@
 module Main where -- Descomentar esta linea cuando se implemente la funcion main
 
-import Bots
+import Bots 
 import Constants
 import Entities
 import Geometry
@@ -8,18 +8,17 @@ import Tank
 import Types
 import Collisions
 import Render
-import Memory
+
 
 import Graphics.Gloss
 import Graphics.Gloss.Interface.Pure.Game
 import Graphics.Gloss.Data.Color
 import Graphics.Gloss.Juicy
 
-
 import System.Random(randomRIO)
 
 import Data.Maybe
-import Control.Monad (join) --Este join es importarlo para sacar los valores de Maybe(maybe Int)
+import Entities (GameState(worldSize))
 
 numTanks :: Int
 numTanks = 8
@@ -99,20 +98,15 @@ updateGame dt gameState =
       -- 2. Si no, ejecuta el juego
       Nothing -> 
         let
-            --Tomamos unas actions por cada tanque
-            actions = map (\t -> 
-                let bot = case fromMaybe 3 (join(readMemoryInt "bot" (memory t))) of
-                            0 -> aggressiveBot gameState t -- Elegimos Bot aggressive segun el parametro de la memoria
-                            1 -> opportunistBot gameState t -- Elegimos Bot opportunist segun el parametro de la memoria
-                            2 -> circleBot gameState t -- Elegimos Bot que se mueve en circulo segun el parametro de la memoria
-                            _ -> chaserBot gameState t -- Elegimos Bot chaserBot segun el parametro de la memoria
-                in handleActions t bot 
-              ) (tanks gameState)
+            actions = map (\t -> handleActions t (getBot gameState t)) (tanks gameState) --MODIFICADO
             
+            ws = worldSize gameState
+
+
             --Actualizamos las posiciones
-            newTanks = [ reduceCooldown( updatePosition tank dt ) dt | (tank, _) <- actions, isRobotAlive tank ] --
+            newTanks = [ reduceCooldown( updatePosition tank dt ws ) dt | (tank, _) <- actions, isRobotAlive tank ] --
             newProyectiles = concat [ projectile | (_, projectile) <- actions ]
-            allProyectiles = (proyectiles gameState) ++ newProyectiles
+            allProyectiles = proyectiles gameState ++ newProyectiles
             updatedProyectiles = updateProyectiles allProyectiles dt
 
 
