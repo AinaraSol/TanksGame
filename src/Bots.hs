@@ -1,5 +1,6 @@
 module Bots where
 
+import Constants
 import Entities
 import Geometry
 import Tank
@@ -47,9 +48,9 @@ aggressiveBot game self =
           radAngle = deg2rad degAngle
           
           -- 3. Usamos RADIANES para calcular el vector
-          vec = (cos radAngle * 10, sin radAngle * 10)
+          vec = (cos radAngle * tankSpeed, sin radAngle * tankSpeed)
           
-      in if dist < 100
+      in if dist < 300
          -- 4. Usamos GRADOS para la acción Rotate
          then [Stay, Rotate degAngle, Shoot enemyPos]
          -- 5. Usamos GRADOS para la acción Rotate
@@ -70,8 +71,8 @@ opportunistBot game self =
           dist     = distanceBetween myPos enemyPos
           degAngle = angleToTarget myPos enemyPos
           radAngle = deg2rad degAngle
-          vec = (cos radAngle * 10, sin radAngle * 10)
-      in if dist < 150
+          vec = (cos radAngle * tankSpeed, sin radAngle * tankSpeed)
+      in if dist < 400
          then [Stay, Rotate degAngle, Shoot enemyPos]
          else [Rotate degAngle, Move vec]
 
@@ -89,6 +90,6 @@ chaserBot game self =
           enemyPos = position (tankBaseObject enemy)
           degAngle = angleToTarget myPos enemyPos
           radAngle = deg2rad degAngle
-          vec = (cos radAngle * 10, sin radAngle * 10)
+          vec = (cos radAngle * tankSpeed, sin radAngle * tankSpeed)
       in [Rotate degAngle, Move vec]  -- solo gira y se mueve hacia el enemigo
 

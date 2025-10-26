@@ -1,5 +1,6 @@
 module Render where
 
+import Constants
 import Entities
 import Tank
 import Graphics.Gloss
@@ -15,27 +16,31 @@ drawGame game =
         activeProjectiles = length (proyectiles game)
         
         -- Dibuja el HUD en la esquina superior izquierda
+        posX = - (fst (worldSize game)) + 10
+        posY = (snd (worldSize game)) - 20
         hudPictures = [
-          translate (-390) 380 $ scale 0.15 0.15 $ color black $ 
+          translate posX posY $ scale 0.15 0.15 $ color white $ 
             text ("Robots: " ++ show livingRobots),
-          translate (-390) 360 $ scale 0.15 0.15 $ color black $ 
+          translate posX (posY - 20) $ scale 0.15 0.15 $ color white $ 
             text ("Proyectiles: " ++ show activeProjectiles)
           ]
     in
     Pictures (
-        -- 1. Dibuja tanques VIVOS (filtro anti-zombies)
+        -- 1. Dibuja el fondo 
+       [background game] ++
+        -- 2. Dibuja tanques VIVOS (filtro anti-zombies)
         [drawTank tank | tank <- tanks game, isRobotAlive tank] ++
         
-        -- 2. Dibuja los proyectiles
-        [drawProyectile projectile | projectile <- proyectiles game] ++
-        
-        -- 3. Dibuja explosiones
-        [drawExplosion explosion | explosion <- explosions game] ++
+        -- 3. Dibuja los proyectiles
+        [drawProyectile projectile game | projectile <- proyectiles game] ++
 
-        -- 4. Dibuja el HUD
+        -- 4. Dibuja explosiones
+        [drawExplosion explosion game | explosion <- explosions game] ++
+
+        -- 5. Dibuja el HUD
         hudPictures ++
-        
-        -- 5. Dibuja el mensaje de victoria (si existe)
+
+        -- 6. Dibuja el mensaje de victoria (si existe)
         (drawWinner (winner game) (gameTime game))
     )
 -- Función auxiliar para dibujar el mensaje de victoria
@@ -66,32 +71,43 @@ drawWinner (Just (winId, winTime)) currentTime =
 
 
 drawTank :: Tank -> Picture
-drawTank tank = Scale 1.5 1.5 $ Pictures [
-        translate (posX) (posY + 15) $ color green $ rectangleWire (0.4*100) 5,
-        translate (posX - 0.2*(100-tankHealth)) (posY + 15) $ color green $ rectangleSolid (0.4*tankHealth) 5, --Esto es la barra de vida del tanque, la posicion hay que desplazarla hacia la izquierda en función de la vida del tanque
-        translate (posX) (posY) $ rotate (-tankAngle) $ rectangleSolid 20 10, -- El rotate se pone en minuscula para evitar conflicto con la accion Rotate
-        translate posX posY $ rotate (-turretAngle) $ pictures [ 
-                color yellow $ rectangleSolid 5 5, --torreta
-                translate 10 0 $ color yellow $ rectangleSolid 15 3 --cañon
-            ]
+drawTank tank = Pictures [
+        -- Cuerpo del tanque
+        translate (posX) (posY) $ rotate (-tankAngle) $ tankPicture tank, -- El rotate se pone en minuscula para evitar conflicto con la accion Rotate
+        -- translate (posX) (posY) $ rotate (-tankAngle) $ color red $ rectangleWire tankLength tankWidth, -- Caja de colisiones para debuguear
+
+        -- Torreta
+        translate (posX) (posY) $ rotate (-turretAngle) $ translate 24 0 $ turretPicture tankTurret, -- Para la hacer la rotación de la torreta primero se translada el centro de rotación, parte gruesa de la torreta (De ahí el `translate 24 0`), al centro del dibujo y después se realiza la rotación.
+        -- translate posX posY $ rotate (-turretAngle) $ pictures [
+        --         color red $ rectangleSolid 5 5, --torreta
+        --         translate 5 0 $ color red $ rectangleSolid 15 3 --cañon
+        --     ], -- Caja de colisiones para debuguear
+
+        -- Barra de vida
+        translate (posX) (posY + 50) $ color green $ rectangleWire (0.4*100) 5,
+        translate (posX - 0.2*(100-tankHealth)) (posY + 50) $ color green $ rectangleSolid (0.4*tankHealth) 5 --Esto es la barra de vida del tanque, la posicion hay que desplazarla hacia la izquierda en función de la vida del tanque
     ] 
     where
         baseObject = tankBaseObject tank
         tankAngle = orientation baseObject
         (posX, posY) = position baseObject
         tankHealth = fromIntegral (fromMaybe 0 (health tank)) -- Usamos fromMaybe 0 para que si la vida es Nothing (muerto),
-        turretAngle = turretOrientation (turret tank)         -- tankHealth sea 0.0 y la barra se dibuje vacía.
+        tankTurret = turret tank
+        turretAngle = turretOrientation tankTurret         -- tankHealth sea 0.0 y la barra se dibuje vacía.
     
 
-drawProyectile :: Proyectile -> Picture
-drawProyectile proyectile = Scale 1.5 1.5 $ translate (posX) (posY) $ rotate (angle) $ circleSolid 2
+drawProyectile :: Proyectile -> GameState -> Picture
+drawProyectile proyectile game = translate (posX) (posY) $ rotate (-angle) $  projectilePicture game
     where
         baseObject = proyectileBaseObject proyectile
         angle = orientation baseObject
         (posX, posY) = position baseObject
 
-drawExplosion :: Explosion -> Picture
-drawExplosion explosion = Scale 1.5 1.5 $ translate (posX) (posY) $ Color red $ circleSolid (10*sin(dt))
+drawExplosion :: Explosion -> GameState -> Picture
+drawExplosion explosion game = translate (posX) (posY) $  explosionPicture
     where
         dt = explosionTime explosion
+        explosionPicturesList = explosionPictures game
+        explosionIndex = min (length explosionPicturesList - 1) (floor (dt * 5))
+        explosionPicture = explosionPicturesList !! explosionIndex
         (posX, posY) = explosionPosition explosion

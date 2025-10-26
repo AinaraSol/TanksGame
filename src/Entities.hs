@@ -1,6 +1,7 @@
 module Entities where
 
 import Types
+import Graphics.Gloss.Data.Picture (Picture)
 
 type Bot = GameState -> Tank -> [Action]
 
@@ -27,7 +28,8 @@ data Tank =
         --velocity::Velocity, 
         memory::Memory,
         tankBaseObject :: BaseObject, -- Composicion
-        shootCooldown :: Float --Tiempo para enfriar el cañon
+        shootCooldown :: Float, --Tiempo para enfriar el cañon
+        tankPicture :: Picture
     }
     deriving (Show, Eq)
 
@@ -37,7 +39,8 @@ data Tank =
 
 data Turret = 
     Turret {
-        turretOrientation::Angle
+        turretOrientation::Angle,
+        turretPicture :: Picture
     }
     deriving (Show, Eq)
 
@@ -64,7 +67,10 @@ data GameState = GameState {
     explosions :: [Explosion], -- explosiones en el tablero
     worldSize :: Size, -- cuadrícula del juego no sabemos si declararla como variable global debido a que será constante
     gameTime :: Float,
-    winner :: Maybe (Int, Float) -- <-- Guardamos al ganador del juego
+    winner :: Maybe (Int, Float), -- <-- Guardamos al ganador del juego
+    background :: Picture, -- Imagen de fondo del juego
+    projectilePicture :: Picture, -- Imagen del proyectil
+    explosionPictures :: [Picture] -- Lista de imágenes para la animación de explosiones
 } deriving (Show)
 
 data Explosion = Explosion {

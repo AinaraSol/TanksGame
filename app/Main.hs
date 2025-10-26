@@ -1,6 +1,7 @@
 module Main where -- Descomentar esta linea cuando se implemente la funcion main
 
 import Bots
+import Constants
 import Entities
 import Geometry
 import Tank
@@ -11,20 +12,30 @@ import Render
 import Graphics.Gloss
 import Graphics.Gloss.Interface.Pure.Game
 import Graphics.Gloss.Data.Color
+import Graphics.Gloss.Juicy
+
 
 import System.Random(randomRIO)
 
-import Data.Maybe(isJust)
+import Data.Maybe(fromJust)
 
 numTanks :: Int
-numTanks = 4
+numTanks = 8
 
 size :: Float
-size = 200
+size = 400
+
+tileSize :: Float
+tileSize = 64 -- Tamaño de cada cuadrado del fondo en píxeles
+
+
 
 -- Esta función crea un nuevo GameState con numTanks tanques y una lista de proyectilis vacía
 newGameState :: IO GameState
 newGameState = do
+    maybeBackground <- loadJuicyPNG ("assets/Background_tile.png")
+    projectileMaybePicture <- loadJuicyPNG ("assets/Projectile.png")
+    explosionMaybePictures <- mapM (\i -> loadJuicyPNG ("assets/Explosion/Explosion_" ++ show i ++ ".png")) [1..10]
     tankList <- mapM newTank [1..numTanks]
     let
         proyectileList = []
@@ -32,37 +43,49 @@ newGameState = do
         worldSize = (size, size)
         gameTime = 0
         winner = Nothing
+
+        numberOfTilesX = fromIntegral $ ceiling (size / tileSize) -- la mitad de los cuadrados que caben en el ancho
+        numberOfTilesY = fromIntegral $ ceiling (size / tileSize) -- la mitad de los cuadrados que caben en el alto
         
-    return $ GameState tankList proyectileList explosionList worldSize gameTime winner
+        -- Crear el fondo repitiendo la imagen del tile
+        -- se calcula la posicion de cada tile en base a su índice y el tamaño del tile
+        background = Pictures [translate (x * tileSize) (y * tileSize) (fromJust maybeBackground) | x <- [-numberOfTilesX .. numberOfTilesX], y <- [-numberOfTilesY .. numberOfTilesY]]
+        
+        projectilePicture = fromJust projectileMaybePicture
+        explosionPictures = map fromJust explosionMaybePictures
+
+    return $ GameState tankList proyectileList explosionList worldSize gameTime winner background projectilePicture explosionPictures
 
 newTank :: Int -> IO Tank
 newTank id = do
+    tankMaybePicture <- loadJuicyPNG ("assets/Boat/Boat_" ++ show (id `mod` 4 + 1) ++ ".png")
+    turretMaybePicture <- loadJuicyPNG ("assets/Boat/Cannon.png")
     rx <- randomRIO(-size, size)
     ry <- randomRIO(-size, size)
     let
         tankId = id
-        turret = Turret 0
+        tankPicture = fromJust tankMaybePicture
+        turretPicture = fromJust turretMaybePicture
+        turret = Turret 0 turretPicture -- La torreta empieza apuntando hacia la derecha (0 grados)
         health = Just 100
         memory = []
         tankBaseObject = BaseObject (rx, ry) (0, 0) 0
         cooldown = 0
 
-    return $ Tanque tankId turret health memory tankBaseObject cooldown
+    return $ Tanque tankId turret health memory tankBaseObject cooldown tankPicture
 
 main :: IO ()
 main = do
     newState <- newGameState -- Con esto convertimos el IO GameState a GameState
     play
-        (InWindow "Tanks Game" (round size*4,round size*4) (0,0))
-        earthBrown
+        (InWindow "Tanks Game" (round size*2,round size*2) (0,0))
+        black
         60
         newState
         drawGame
         handleInput
         updateGame
 
-earthBrown :: Color
-earthBrown = makeColorI 222 184 135 255
 
 updateGame :: Float -> GameState -> GameState
 updateGame dt gameState = 
@@ -76,11 +99,11 @@ updateGame dt gameState =
             --Tomamos unas actions por cada tanque
             actions = map (\t -> 
                 let bot = case idTank t of
-                            4 -> chaserBot gameState t
+                            4 -> chaserBot gameState t -- El tanque con ID 4 siempre usa el chaserBot
                             _ -> if odd (idTank t)
-                                 then aggressiveBot gameState t
-                                 else opportunistBot gameState t
-                in handleActions t bot
+                                 then aggressiveBot gameState t -- Los tanques con ID impar usan aggressiveBot
+                                 else opportunistBot gameState t -- Los tanques con ID par usan opportunistBot
+                in handleActions t bot 
               ) (tanks gameState)
             
             --Actualizamos las posiciones
@@ -96,7 +119,7 @@ updateGame dt gameState =
             --Aplicamos las colisones
             gameAfterCollisions = checkCollisions movedTanksGame --
 
-            updatedExplosions = [ explosion | explosion <- updateExplosions (explosions gameAfterCollisions) dt, explosionTime explosion <= 3]
+            updatedExplosions = [ explosion | explosion <- updateExplosions (explosions gameAfterCollisions) dt, explosionTime explosion <= 2] -- duracion de la explosion 1 segundo
 
             -- REVISAMOS SI HAY UN GANADOR
             livingTanks = filter isRobotAlive (tanks gameAfterCollisions) --

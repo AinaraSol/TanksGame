@@ -1,5 +1,6 @@
 module Tank where
 
+import Constants
 import Geometry
 import Entities
 import Types
@@ -81,10 +82,10 @@ shootPostion t pos =
     angleToPosition = angleToTarget tankPosition pos
     radAngle = deg2rad angleToPosition
     newTank = t { turret = (turret t) {turretOrientation = angleToPosition} }
-    vel = (cos radAngle * 20, sin radAngle * 20)
+    vel = (cos radAngle * projectileSpeed, sin radAngle * projectileSpeed)
     --Para calcular la posicion del proyectil tenemos que ponerlo fuera del tanque, para que no cause una colision con el propio tanque
-    proyectilPos = (fst tankPosition + cos radAngle * 15, snd tankPosition + sin radAngle * 15)
-    proyectile = Proyectile tankPosition 30 (BaseObject proyectilPos vel radAngle)
+    proyectilPos = (fst tankPosition + cos radAngle * tankLength, snd tankPosition + sin radAngle * tankLength)
+    proyectile = Proyectile tankPosition projectileDamage (BaseObject proyectilPos vel angleToPosition) -- El angulo del proyectil es en grados
   in (newTank, [proyectile])
 
 
@@ -109,8 +110,8 @@ tankVertices :: Tank -> [Point]
 tankVertices t =
   let (cx, cy) = position (tankBaseObject t)      -- toma la posición del tanque
       theta = orientation (tankBaseObject t)             -- ángulo del tanque
-      w = 20.0      -- ancho total, por ej 20
-      h = 10.0      -- alto total, por ej 10
+      w = tankWidth     -- ancho total, por ej 20
+      h = tankLength      -- alto total, por ej 10
       hw = w / 2    -- para que tenga el tanque el ancho 10 unidades desde su posición a la izq y 10 hacia la derecha
       hh = h / 2    -- lo mismo pero con la altura
       rotated = getVertices ((-hw,-hh),( hw,-hh),( hw, hh),(-hw, hh),theta) -- calculamos la lista de vértices con la rotación hecha
@@ -120,7 +121,7 @@ tankVertices' :: Tank -> [Point]
 tankVertices' t =
   let (cx, cy) = position (tankBaseObject t)
       theta = orientation (tankBaseObject t)
-      w = 20.0; h = 10.0
+      w = tankWidth; h = tankLength
       hw = w / 2; hh = h / 2
       rotated = getVertices ((-hw,-hh),( hw,-hh),( hw, hh),(-hw, hh), theta)
   in (\(rx, ry) -> (cx + rx, cy + ry)) <$> rotated   -- <$> en vez de map para envolver la función lambda
