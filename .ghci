@@ -1,2 +1,3 @@
 :set -isrc
 :set -package random
+:set -package gloss-juicy

@@ -8,6 +8,7 @@ import Tank
 import Types
 import Collisions
 import Render
+import Memory
 
 import Graphics.Gloss
 import Graphics.Gloss.Interface.Pure.Game
@@ -17,7 +18,8 @@ import Graphics.Gloss.Juicy
 
 import System.Random(randomRIO)
 
-import Data.Maybe(fromJust)
+import Data.Maybe
+import Control.Monad (join) --Este join es importarlo para sacar los valores de Maybe(maybe Int)
 
 numTanks :: Int
 numTanks = 8
@@ -62,13 +64,14 @@ newTank id = do
     turretMaybePicture <- loadJuicyPNG ("assets/Boat/Cannon.png")
     rx <- randomRIO(-size, size)
     ry <- randomRIO(-size, size)
+    botAsigna <- randomRIO(0,2)
     let
         tankId = id
         tankPicture = fromJust tankMaybePicture
         turretPicture = fromJust turretMaybePicture
         turret = Turret 0 turretPicture -- La torreta empieza apuntando hacia la derecha (0 grados)
         health = Just 100
-        memory = []
+        memory = [("bot",MemInt(Just botAsigna))]
         tankBaseObject = BaseObject (rx, ry) (0, 0) 0
         cooldown = 0
 
@@ -98,11 +101,10 @@ updateGame dt gameState =
         let
             --Tomamos unas actions por cada tanque
             actions = map (\t -> 
-                let bot = case idTank t of
-                            4 -> chaserBot gameState t -- El tanque con ID 4 siempre usa el chaserBot
-                            _ -> if odd (idTank t)
-                                 then aggressiveBot gameState t -- Los tanques con ID impar usan aggressiveBot
-                                 else opportunistBot gameState t -- Los tanques con ID par usan opportunistBot
+                let bot = case fromMaybe 2 (join(readMemoryInt "bot" (memory t))) of
+                            0 -> aggressiveBot gameState t -- Elegimos Bot aggressive segun el parametro de la memoria
+                            1 -> opportunistBot gameState t -- Elegimos Bot opportunist segun el parametro de la memoria
+                            _ -> chaserBot gameState t -- Elegimos Bot chaserBot segun el parametro de la memoria
                 in handleActions t bot 
               ) (tanks gameState)
             

@@ -1,6 +1,7 @@
 module Memory where
 
 import Types
+import Entities
 
 -- | Lectura genérica de memoria
 readMemory :: String -> Memory -> Maybe MemoryValue
