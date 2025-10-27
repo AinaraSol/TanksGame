@@ -62,7 +62,7 @@ drawWinner (Just (winId, winTime)) currentTime =
       
       -- Texto principal (Centrado)
       translate (-350) 25 $ scale 0.5 0.5 $ color white $
-        text ("¡Tanque " ++ show winId ++ " ha ganado!"),
+        text ("¡Barco " ++ show winId ++ " ha ganado!"),
       
       -- Texto countdown (Pequeño, abajo y centrado)
       translate (-115) (-50) $ scale 0.2 0.2 $ color white $

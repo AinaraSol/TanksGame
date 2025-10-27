@@ -5,7 +5,7 @@ import Entities
 
 -- | Lectura genérica de memoria
 readMemory :: String -> Memory -> Maybe MemoryValue
-readMemory key mem = lookup key mem
+readMemory = lookup 
 
 -- Funciones auxiliares para lectura por tipo
 readMemoryInt :: String -> Memory -> Maybe (Maybe Int)
@@ -29,13 +29,13 @@ writeMemory key val mem = (key, val) : filter (\(k,_) -> k /= key) mem
 
 -- Funciones auxiliares para escritura por tipo
 writeMemoryInt :: String -> Int -> Memory -> Memory
-writeMemoryInt key val mem = writeMemory key (MemInt (Just val)) mem
+writeMemoryInt key val = writeMemory key (MemInt (Just val)) 
 
 writeMemoryPoint :: String -> Point -> Memory -> Memory
-writeMemoryPoint key val mem = writeMemory key (MemPoint (Just val)) mem
+writeMemoryPoint key val = writeMemory key (MemPoint (Just val)) 
 
 writeMemoryString :: String -> String -> Memory -> Memory
-writeMemoryString key val mem = writeMemory key (MemString (Just val)) mem
+writeMemoryString key val = writeMemory key (MemString (Just val))
 
 -- Funciones auxiliares para actualizar valores existentes
 updateMemoryInt :: String -> (Int -> Int) -> Memory -> Memory

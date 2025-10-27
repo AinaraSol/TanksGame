@@ -5,6 +5,7 @@ import Geometry
 import Entities
 import Types
 
+import Memory 
 import Data.Maybe (isJust)
 
 -- detectedAgent: Determinar si un agente ha detectado a otro en caso de encontrarse dentro del rango de su radar
@@ -54,10 +55,22 @@ updateVelocity a tank = tank { tankBaseObject = (tankBaseObject tank) { velocity
 
 -- updatePosition: Actualizar una posición en función de la velocidad y el incremento de tiempo
 
-updatePosition :: Tank -> Float -> Tank
-updatePosition tank deltaT
+updatePosition :: Tank -> Float -> Size -> Tank
+updatePosition tank deltaT worldSize
   | vx == 0 && vy == 0 = tank  -- si no se mueve, la posición no cambia
-  | otherwise = tank { tankBaseObject = (tankBaseObject tank) { position = (x + vx * deltaT, y + vy * deltaT) } }
+  | otherwise =let
+        -- 1. Calcula la nueva posición hipotética
+        newPos = (x + vx * deltaT, y + vy * deltaT)
+        
+        -- 2. Crea un "tanque fantasma" en esa nueva posición
+        newBaseObj = (tankBaseObject tank) { position = newPos }
+        hypotheticalTank = tank { tankBaseObject = newBaseObj }
+        
+    in
+        -- 3. Comprueba si ESE TANQUE FANTASMA está en los límites
+        if isTankInBounds hypotheticalTank worldSize
+           then hypotheticalTank -- Si está dentro, aplica el movimiento
+           else tank             -- Si se sale, no te muevas (quédate en la posición original)
   where
     (x,y)   = position (tankBaseObject tank)
     (vx,vy) = velocity (tankBaseObject tank)
@@ -75,6 +88,8 @@ handleAction t a =
     Rotate angle -> (t { tankBaseObject = (tankBaseObject t) { orientation = angle } }, [])
     Stay -> (t { tankBaseObject = (tankBaseObject t) { velocity = (0, 0) } }, [])
 
+    UpdateMemory key value -> (t { memory= writeMemory key value (memory t)}, []) --MODIFICADO 
+
 shootPostion :: Tank -> Position -> (Tank, [Proyectile])
 shootPostion t pos =
   let
@@ -90,12 +105,12 @@ shootPostion t pos =
 
 
 handleActions :: Tank -> [Action] -> (Tank, [Proyectile])
-handleActions t actions = foldl 
+handleActions t = foldl 
           (\(tank, bullets) action ->
             let 
               (tank', newBullets) = handleAction tank action
             in (tank', bullets ++ newBullets)
-          ) (t, []) actions
+          ) (t, []) 
 
 updateProyectiles :: [Proyectile] -> Float -> [Proyectile]
 updateProyectiles ps dt = 
@@ -128,10 +143,16 @@ tankVertices' t =
 
 --        - isInBounds :: Point -> Size -> Bool. Verifica si un punto se encuentra dentro de los límites definidos por un tamaño dado.
 
+--isInBounds :: Point -> Size -> Bool
+--isInBounds (x,y) (width, height)
+  --  | x >= 0 && x <= width && y >= 0 && y <= height = True
+  -- | otherwise = False
+
 isInBounds :: Point -> Size -> Bool
 isInBounds (x,y) (width, height)
-    | x >= 0 && x <= width && y >= 0 && y <= height = True
+    | abs x <= width && abs y <= height = True
     | otherwise = False
 
 isTankInBounds :: Tank -> Size -> Bool
 isTankInBounds tank size = all (\vertice -> isInBounds vertice size) (tankVertices tank)
+
