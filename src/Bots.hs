@@ -31,7 +31,6 @@ botRegistry = [
     ,(1, opportunistBot)
     ,(2, chaserBot)
     , (3, runnerBot)
-    ,(4, trackerBot)
   ]
 
 getBot :: GameState -> Tank -> [Action]
@@ -49,7 +48,8 @@ getBot game self =
     in
         -- 4. Ejecuta la función del bot correspondiente
         botFunc game self
--- Para estrategia 1
+
+-- Funciones Auxiliares
 nearestEnemy :: Tank -> [Tank] -> Maybe Tank
 nearestEnemy self ts =
     case filter (\t -> idTank t /= idTank self && isRobotAlive t) ts of
@@ -68,35 +68,7 @@ weakestEnemy self ts =
         enemies -> Just $ minimumBy (comparing health) enemies
         -- (comparing health) es un atajo para: \a b -> compare (health a) (health b)
   
-
--- Modificada
--- En Bots.hs
-{-
-aggressiveBot :: Bot
-aggressiveBot game self =
-  fromMaybe [Stay] (actionFor <$> nearestEnemy self (tanks game))
-  where
-    actionFor enemy =
-      let myPos    = position (tankBaseObject self)
-          enemyPos = position (tankBaseObject enemy)
-          dist     = distanceBetween myPos enemyPos
-          
-          -- 1. Obtenemos el ángulo en GRADOS (para Rotate)
-          degAngle = angleToTarget myPos enemyPos
-          
-          -- 2. Obtenemos el ángulo en RADIANES (para cos/sin)
-          radAngle = deg2rad degAngle
-          
-          -- 3. Usamos RADIANES para calcular el vector
-          vec = (cos radAngle * tankSpeed, sin radAngle * tankSpeed)
-          
-      in if dist < 300
-         -- 4. Usamos GRADOS para la acción Rotate
-         then [Stay, Rotate degAngle, Shoot enemyPos]
-         -- 5. Usamos GRADOS para la acción Rotate
-         else [Rotate degAngle, Move vec]
--}
-
+--Bot de Ejemplo 1 (Agresivo)
 aggressiveBot :: Bot
 aggressiveBot game self =
   case nearestEnemy self (tanks game) of
@@ -141,8 +113,8 @@ aggressiveBot game self =
       in actions ++ memUpdates
 
 
--- Bot de ejemplo 2
-
+-- Bot de ejemplo 2 (Oportunista)
+--Este Bot va hacia el enemigo más débil
 opportunistBot :: Bot
 opportunistBot game self =
   -- 1. Llama a 'weakestEnemy' en lugar de 'nearestEnemy'
@@ -161,7 +133,7 @@ opportunistBot game self =
          else [Rotate degAngle, Move vec]
 
 --Bot de Ejemplo 3 (Chaser)
--- Bot que persigue directamente al enemigo más cercano, solo colisiones
+--Bot que persigue directamente al enemigo más cercano, solo colisiones
 chaserBot :: Bot
 chaserBot game self =
   fromMaybe [Stay] (actionFor <$> nearestEnemy self (tanks game))
@@ -175,8 +147,7 @@ chaserBot game self =
           vec = (cos radAngle * tankSpeed, sin radAngle * tankSpeed)
       in [Rotate degAngle, Move vec]  -- solo gira y se mueve hacia el enemigo
 
---Bots de Ejemplo 4
-
+--Bots de Ejemplo 4 (Cobarde)
 -- Huye del enemigo más cercano.
 -- Si pierde de vista al enemigo, sigue huyendo de su última posición conocida.
 runnerBot :: Bot
@@ -193,7 +164,7 @@ runnerBot game self =
         -- 3. Decidir de qué posición huir Y qué acción de memoria tomar
         (targetPos, memAction) = case maybeEnemy of
             
-            -- CASO A: Hay un enemigo visible
+            -- CASO 3.1: Hay un enemigo visible
             Just enemy ->
                 let pos = position (tankBaseObject enemy)
                 in ( 
@@ -201,7 +172,7 @@ runnerBot game self =
                      UpdateMemory "lastEnemy" (MemPoint (Just pos)) -- Guarda su posición en memoria
                    )
 
-            -- CASO B: No hay enemigo visible
+            -- CASO 3.2: No hay enemigo visible
             Nothing ->
                 ( 
                   maybeLastPos, -- El objetivo es la última posición guardada (si existe)
@@ -212,13 +183,13 @@ runnerBot game self =
         -- 4. Actuar en base al 'targetPos' que decidimos
         case targetPos of
             
-            -- Si tenemos una posición (actual o de memoria) de la que huir...
+            -- Si tenemos una posición (actual o de memoria) de la que huir
             Just enemyPos ->
                 let
                     -- Calcular dirección de huida (vector opuesto al enemigo)
                     dirAway = sub myPos enemyPos
                     
-                    -- (Usamos la normalización del 'circleBot' que es más segura)
+                    -- Normalizamos la direccion
                     dirToRun = normalize dirAway
                     
                     moveVec = (fst dirToRun * tankSpeed, snd dirToRun * tankSpeed)
@@ -234,67 +205,9 @@ runnerBot game self =
                 in
                     [ Move moveVec
                     , Rotate turretAngle
-                    , memAction  -- <--- ¡AQUÍ INCLUIMOS LA ACCIÓN DE MEMORIA!
-                    ] ++ shootActions -- <--- ¡AQUÍ AÑADIMOS EL DISPARO!
+                    , memAction  
+                    ] ++ shootActions
 
             -- No hay enemigo visible Y no hay nada en memoria. Quedarse quieto.
             Nothing -> [Stay]
 
--- Bot de Ejemplo 5 (Tracker)
--- Fija un objetivo y lo persigue hasta que muere.
--- Reutiliza la lógica de ataque de 'opportunistBot'.
-trackerBot :: Bot
-trackerBot game self =
-    let
-        -- 1. Intenta leer el ID del objetivo de la memoria
-        maybeTargetId = join (readMemoryInt "target_id" (memory self))
-
-        -- 2. Busca ese tanque en la lista de tanques,
-        --    pero solo si el ID existe Y el tanque está vivo.
-        currentTarget = maybeTargetId >>= (\targetId -> 
-                          find (\t -> idTank t == targetId && isRobotAlive t) (tanks game)
-                        )
-        
-        -- 3. Define la lógica de ataque (copiada de opportunistBot)
-        attackLogic enemy =
-          let myPos    = position (tankBaseObject self)
-              enemyPos = position (tankBaseObject enemy)
-              dist     = distanceBetween myPos enemyPos
-              degAngle = angleToTarget myPos enemyPos
-              radAngle = deg2rad degAngle
-              vec = (cos radAngle * tankSpeed, sin radAngle * tankSpeed)
-              
-              -- Dispara si el cooldown está listo
-              shootAction = if shootCooldown self <= 0 then [Shoot enemyPos] else []
-              
-          in if dist < 400
-             then [Stay, Rotate degAngle] ++ shootAction
-             else [Rotate degAngle, Move vec] ++ shootAction
-
-    in
-        case currentTarget of
-          
-          -- CASO A: Tiene un objetivo válido y vivo
-          -- Lo ataca usando la lógica que definimos.
-          Just target -> attackLogic target
-
-          -- CASO B: No tiene objetivo.
-          -- Necesita encontrar uno nuevo.
-          Nothing -> 
-            case nearestEnemy self (tanks game) of
-              
-              -- B1: Encuentra un nuevo enemigo.
-              Just newTarget -> 
-                let 
-                  -- Acciones de ataque
-                  actions = attackLogic newTarget
-                  
-                  -- Acción de memoria Fija el ID del nuevo objetivo.
-                  memAction = UpdateMemory "target_id" (MemInt (Just (idTank newTarget)))
-                in
-                  actions ++ [memAction] -- Devuelve las acciones de ataque + la de memoria
-
-              -- B2: No quedan enemigos.
-              Nothing -> 
-                -- Se queda quieto y limpia la memoria.
-                [Stay, UpdateMemory "target_id" (MemInt Nothing)]

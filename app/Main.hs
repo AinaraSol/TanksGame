@@ -62,7 +62,7 @@ newTank id = do
     turretMaybePicture <- loadJuicyPNG ("assets/Boat/Cannon.png")
     rx <- randomRIO(-size, size)
     ry <- randomRIO(-size, size)
-    botAsigna <- randomRIO(0,4)
+    botAsigna <- randomRIO(0,3)
     let
         tankId = id
         tankPicture = fromJust tankMaybePicture
@@ -97,7 +97,9 @@ updateGame dt gameState =
       -- 2. Si no, ejecuta el juego
       Nothing -> 
         let
-            actions = map (\t -> handleActions t (getBot gameState t)) (tanks gameState) --MODIFICADO
+            -- Calculamos y aplicamos las acciones de cada tanque según su bot, 
+            -- generando el tanque actualizado y los proyectiles disparados.
+            actions = map (\t -> handleActions t (getBot gameState t)) (tanks gameState) 
             
             ws = worldSize gameState
 
