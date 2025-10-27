@@ -28,9 +28,10 @@ import Data.Foldable (find)
 botRegistry :: [(Int, Bot)]
 botRegistry = [
     (0, aggressiveBot)
-    ,(1, runnerBot)
-    , (2, chaserBot)
-    ,(3, trackerBot) 
+    ,(1, opportunistBot)
+    ,(2, chaserBot)
+    , (3, runnerBot)
+    ,(4, trackerBot)
   ]
 
 getBot :: GameState -> Tank -> [Action]
@@ -70,7 +71,7 @@ weakestEnemy self ts =
 
 -- Modificada
 -- En Bots.hs
-
+{-
 aggressiveBot :: Bot
 aggressiveBot game self =
   fromMaybe [Stay] (actionFor <$> nearestEnemy self (tanks game))
@@ -94,6 +95,50 @@ aggressiveBot game self =
          then [Stay, Rotate degAngle, Shoot enemyPos]
          -- 5. Usamos GRADOS para la acción Rotate
          else [Rotate degAngle, Move vec]
+-}
+
+aggressiveBot :: Bot
+aggressiveBot game self =
+  case nearestEnemy self (tanks game) of
+    Nothing -> [Stay]
+    Just enemy ->
+      let
+        myPos = position (tankBaseObject self)
+        enemyPos = position (tankBaseObject enemy)
+
+        --Leemos posiciones anteriores desde memoria
+        maybeLastPos = join (readMemoryPoint "enemy_last_pos" (memory self))
+        maybePrevPos = join (readMemoryPoint "enemy_pos" (memory self))
+
+        --Calculamos velocidad estimada (si tenemos datos previos)
+        enemyVel = case (maybePrevPos, maybeLastPos) of
+          (Just (x2, y2), Just (x1, y1)) -> Just (x2 - x1, y2 - y1)
+          _ -> Nothing
+
+        --Estimamos posición futura
+        predictionTime = 0.5
+        predictedPos = case enemyVel of
+          Just (vx, vy) -> (fst enemyPos + vx * predictionTime, snd enemyPos + vy * predictionTime)
+          Nothing -> enemyPos  -- si no hay datos, apunta al enemigo real
+
+        --Calculamos ángulo hacia la posición predicha
+        degAngle = angleToTarget myPos predictedPos
+        radAngle = deg2rad degAngle
+        dist = distanceBetween myPos predictedPos
+        vec = (cos radAngle * tankSpeed, sin radAngle * tankSpeed)
+
+        --Guardamos en memoria la nueva posición
+        memUpdates =
+          [ UpdateMemory "enemy_last_pos" (MemPoint (Just enemyPos))
+          , UpdateMemory "enemy_pos" (MemPoint (Just predictedPos))
+          ]
+        
+        --Disparo inteligente
+        actions
+          | dist < 300 = [Stay, Rotate degAngle, Shoot predictedPos]
+          | otherwise  = [Rotate degAngle, Move vec]
+      
+      in actions ++ memUpdates
 
 
 -- Bot de ejemplo 2

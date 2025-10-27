@@ -62,7 +62,7 @@ newTank id = do
     turretMaybePicture <- loadJuicyPNG ("assets/Boat/Cannon.png")
     rx <- randomRIO(-size, size)
     ry <- randomRIO(-size, size)
-    botAsigna <- randomRIO(0,3)
+    botAsigna <- randomRIO(0,4)
     let
         tankId = id
         tankPicture = fromJust tankMaybePicture
