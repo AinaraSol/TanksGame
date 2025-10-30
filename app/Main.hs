@@ -1,4 +1,4 @@
-module Main where -- Descomentar esta linea cuando se implemente la funcion main
+module Main where
 
 import Bots 
 import Constants
@@ -8,72 +8,12 @@ import Tank
 import Types
 import Collisions
 import Render
-
+import NewGame
 
 import Graphics.Gloss
 import Graphics.Gloss.Interface.Pure.Game
 import Graphics.Gloss.Data.Color
 import Graphics.Gloss.Juicy
-
-import System.Random(randomRIO)
-
-import Data.Maybe
-
-numTanks :: Int
-numTanks = 8
-
-size :: Float
-size = 400
-
-tileSize :: Float
-tileSize = 64 -- Tamaño de cada cuadrado del fondo en píxeles
-
-
-
--- Esta función crea un nuevo GameState con numTanks tanques y una lista de proyectilis vacía
-newGameState :: IO GameState
-newGameState = do
-    maybeBackground <- loadJuicyPNG ("assets/Background_tile.png")
-    projectileMaybePicture <- loadJuicyPNG ("assets/Projectile.png")
-    explosionMaybePictures <- mapM (\i -> loadJuicyPNG ("assets/Explosion/Explosion_" ++ show i ++ ".png")) [1..10]
-    tankList <- mapM newTank [1..numTanks]
-    let
-        proyectileList = []
-        explosionList = []
-        worldSize = (size, size)
-        gameTime = 0
-        winner = Nothing
-
-        numberOfTilesX = fromIntegral $ ceiling (size / tileSize) -- la mitad de los cuadrados que caben en el ancho
-        numberOfTilesY = fromIntegral $ ceiling (size / tileSize) -- la mitad de los cuadrados que caben en el alto
-        
-        -- Crear el fondo repitiendo la imagen del tile
-        -- se calcula la posicion de cada tile en base a su índice y el tamaño del tile
-        background = Pictures [translate (x * tileSize) (y * tileSize) (fromJust maybeBackground) | x <- [-numberOfTilesX .. numberOfTilesX], y <- [-numberOfTilesY .. numberOfTilesY]]
-        
-        projectilePicture = fromJust projectileMaybePicture
-        explosionPictures = map fromJust explosionMaybePictures
-
-    return $ GameState tankList proyectileList explosionList worldSize gameTime winner background projectilePicture explosionPictures
-
-newTank :: Int -> IO Tank
-newTank id = do
-    tankMaybePicture <- loadJuicyPNG ("assets/Boat/Boat_" ++ show (id `mod` 4 + 1) ++ ".png")
-    turretMaybePicture <- loadJuicyPNG ("assets/Boat/Cannon.png")
-    rx <- randomRIO(-size, size)
-    ry <- randomRIO(-size, size)
-    botAsigna <- randomRIO(0,3)
-    let
-        tankId = id
-        tankPicture = fromJust tankMaybePicture
-        turretPicture = fromJust turretMaybePicture
-        turret = Turret 0 turretPicture -- La torreta empieza apuntando hacia la derecha (0 grados)
-        health = Just 100
-        memory = [("bot",MemInt(Just botAsigna))]
-        tankBaseObject = BaseObject (rx, ry) (0, 0) 0
-        cooldown = 0
-
-    return $ Tanque tankId turret health memory tankBaseObject cooldown tankPicture
 
 main :: IO ()
 main = do

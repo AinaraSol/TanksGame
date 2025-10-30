@@ -65,6 +65,7 @@ data GameState = GameState {
     tanks :: [Tank], --tanques vivos en el momento
     proyectiles :: [Proyectile], -- proyectiles activos en pantalla
     explosions :: [Explosion], -- explosiones en el tablero
+    obstacles :: [Obstacle], -- lista con los obstáculos del tablero
     worldSize :: Size, -- cuadrícula del juego no sabemos si declararla como variable global debido a que será constante
     gameTime :: Float,
     winner :: Maybe (Int, Float), -- <-- Guardamos al ganador del juego
@@ -94,3 +95,13 @@ data BaseObject = BaseObject {
     velocity :: Velocity, 
     orientation :: Angle
 } deriving (Show, Eq)
+
+
+-- Tipo obstacle
+data Obstacle = Obstacle{
+    obstacleClass :: Int, -- Obstaculos de clase: 0: Impiden el paso, 1: hacen daño, 2: afectan a los arrededores
+    obstaclePosition :: Position,
+    obstacleDamage :: Int,
+    damageRange :: Int,
+    obstaclePicture :: Picture
+} deriving (Show)

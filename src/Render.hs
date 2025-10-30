@@ -37,10 +37,13 @@ drawGame game =
         -- 4. Dibuja explosiones
         [drawExplosion explosion game | explosion <- explosions game] ++
 
-        -- 5. Dibuja el HUD
+        -- 5. Dibuja obstáculos
+        [ drawObstacle obstacle | obstacle <- obstacles game ] ++ 
+
+        -- 6. Dibuja el HUD
         hudPictures ++
 
-        -- 6. Dibuja el mensaje de victoria (si existe)
+        -- 7. Dibuja el mensaje de victoria (si existe)
         (drawWinner (winner game) (gameTime game))
     )
 -- Función auxiliar para dibujar el mensaje de victoria
@@ -111,3 +114,8 @@ drawExplosion explosion game = translate (posX) (posY) $  explosionPicture
         explosionIndex = min (length explosionPicturesList - 1) (floor (dt * 5))
         explosionPicture = explosionPicturesList !! explosionIndex
         (posX, posY) = explosionPosition explosion
+
+drawObstacle :: Obstacle -> Picture
+drawObstacle obstacle = translate (posX) (posY) $ obstaclePicture obstacle
+    where
+      (posX, posY) = obstaclePosition obstacle
