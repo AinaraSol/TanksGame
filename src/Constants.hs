@@ -17,10 +17,11 @@ projectileSpeed = 50
 projectileDamage :: Int
 projectileDamage = 20
 
-numSimpleObstacles, numDamageObstacles, numExplosionObstacles :: Int
+numSimpleObstacles, numDamageObstacles, numSwirlObstacles, numMineObstacles :: Int
 numSimpleObstacles = 2
 numDamageObstacles = 2
-numExplosionObstacles = 2
+numSwirlObstacles = 1
+numMineObstacles = 2
 
 size :: Float
 size = 400

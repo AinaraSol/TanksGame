@@ -43,15 +43,19 @@ newObstacles :: IO [Obstacle]
 newObstacles = do
     simpleObstacles <-  replicateM numSimpleObstacles (newObstacle 0)
     damageObstacles <- replicateM numDamageObstacles (newObstacle 1)
-    explosionObstacles <- replicateM numExplosionObstacles (newObstacle 2)
-    
-    return $ simpleObstacles ++ damageObstacles ++ explosionObstacles
+    swirlObstacles <- replicateM numSwirlObstacles (newObstacle 2)
+    mineObstacles <- replicateM numMineObstacles (newObstacle 3)
+
+    return $ simpleObstacles ++ damageObstacles ++ swirlObstacles ++ mineObstacles
 
 newObstacle :: Int -> IO Obstacle
 newObstacle obstacleClass = do
     rx <- randomRIO(-size, size)
     ry <- randomRIO(-size, size)
-    obstacleMaybePicture <- loadJuicyPNG ("assets/Obstacles/obstacle_" ++ show(obstacleClass) ++ ".png")
+    obstacleMaybePicture <- 
+        if obstacleClass == 2
+            then loadJuicyPNG ("assets/Obstacles/remolino/water90015.png")
+            else loadJuicyPNG ("assets/Obstacles/obstacle_" ++ show (obstacleClass) ++ ".png")
     let 
         obstaclePosition = (rx, ry)
         obstacleDamage 
@@ -61,8 +65,12 @@ newObstacle obstacleClass = do
         damageRange
             | obstacleClass == 2 = 15
             | otherwise = 0
+        obstacleTime
+            | obstacleClass == 3 = Just 5
+            | otherwise = Nothing
+        obstacleTrigger = False
         obstaclePicture = fromJust obstacleMaybePicture
-    return $ Obstacle obstacleClass obstaclePosition obstacleDamage damageRange obstaclePicture
+    return $ Obstacle obstacleClass obstaclePosition obstacleDamage damageRange obstacleTime obstacleTrigger obstaclePicture
 
 
 newTank :: Int -> IO Tank

@@ -6,6 +6,7 @@ import Entities
 import Tank
 
 import Data.Maybe (isJust)
+import Data.List (find)
 
 --TAREA 3
 
@@ -122,7 +123,10 @@ detectRobotProyectileCollisions :: [Tank] -> [Proyectile] -> [(Int, Proyectile)]
 detectRobotProyectileCollisions tanks projs = -- recibe lista tanques y proyectiles
   [ (idTank t, p) | t <- tanks, p <- projs , checkCollision (tankVertices t) (proyectileVertices p) ] --con las dos funciones de antes conseguimos la lista de vertices del tanque y el proyectile rotados
 
-
+-- Detecta colisiones tanque-obstaculos.
+detectRobotObstacleCollisions :: [Tank] -> [Obstacle] -> [(Int, Obstacle)]
+detectRobotObstacleCollisions tanks obs = -- recibe lista tanques y obstaculos
+  [ (idTank t, o) | t <- tanks, o <- obs , tankCollidesObstacle t o ] 
 
   
 --Implementacion 
@@ -141,21 +145,24 @@ checkCollisions gs =
   let ts  = tanks gs -- lista tanques vivos
       ps  = proyectiles gs -- lista proyectiles en pantalla
       es  = explosions gs
+      os = obstacles gs
 
       -- 1. detectar colisiones
       tankProjCollisions = detectRobotProyectileCollisions ts ps
       tankTankCollisions = detectRobotRobotCollisions ts
+      tankObstaclesCollisions = detectRobotObstacleCollisions ts os
 
       -- 2. aplicar efectos
       tsAfterProj = collisionRobotProyectileEvent' ts tankProjCollisions 
       tsAfterBoth = collisionRobotRobotEvent' tsAfterProj tankTankCollisions --la lista de tanques con vida actualizada tras contar el daño de los proyectiles
+      tsAfterObstacles = collisionRobotObstacleEvent tsAfterBoth tankObstaclesCollisions
 
       newExplosions = generateExplosions [snd collision | collision <- tankProjCollisions]
 
       -- 3. eliminar proyectiles que ya colisionaron
       psAfter = removeCollidedProyectiles' ps tankProjCollisions
 
-  in gs { tanks = tsAfterBoth, proyectiles = psAfter, explosions = explosions gs ++ newExplosions }
+  in gs { tanks = tsAfterObstacles, proyectiles = psAfter, explosions = explosions gs ++ newExplosions }
 
 -- Recibe una lista de proyectiles y una lista de colisiones (idTank,Proyectile) y devuelve la lista de proyectiles sin los proyectiles que han impactado
 removeCollidedProyectiles :: [Proyectile] -> [(Int, Proyectile)] -> [Proyectile]
@@ -177,6 +184,11 @@ collisionRobotProyectileEvent tanks collisions =
 collisionRobotProyectileEvent' :: [Tank] -> [(Int, Proyectile)] -> [Tank]
 collisionRobotProyectileEvent' tanks collisions = 
   applyPCollision'' collisions <$> tanks
+
+collisionRobotObstacleEvent :: [Tank] -> [(Int, Obstacle)] -> [Tank]
+collisionRobotObstacleEvent tanks collisions = 
+  handleTankObstacle collisions <$> tanks
+
 
 generateExplosions :: [Proyectile] -> [Explosion]
 generateExplosions = map newExplosion
@@ -249,35 +261,40 @@ reduceHealth dmg (Just h) =
 
 
 -- Detecta y maneja colisiones tanque-obstáculo
-handleTankObstacle :: Tank -> Obstacle -> (Tank, Maybe Explosion)
-handleTankObstacle tank obstacle =
-    case obstacleClass obstacle of
-        0 -> (handleTankObstacleBlocking tank obstacle, Nothing)
-        1 -> (handleTankObstacleDamageOnTouch tank obstacle, Nothing)
-        2 -> handleTankObstacleTimedMine tank obstacle
-        _ -> (tank, Nothing)
+handleTankObstacle :: [(Int, Obstacle)] -> Tank -> Tank
+handleTankObstacle collisions tank =
+  case find ((== idTank tank) . fst) collisions of
+    Just collision -> handleTankObstaclesCollision collision tank
+    Nothing        -> tank  -- si no hay colisión, devolvemos el tanque sin cambios
+
+handleTankObstaclesCollision :: (Int,Obstacle) -> Tank -> Tank
+handleTankObstaclesCollision collision tank =
+  case obstacleClass (snd collision) of
+        0 -> handleTankObstacleBlocking tank (snd collision)
+        1 -> handleTankObstacleDamage tank (snd collision)
+        2 -> handleTankObstacleSwirl tank (snd collision)
+        _ -> tank
+
 
 -- Obstaculo que bloquean el paso
 handleTankObstacleBlocking :: Tank -> Obstacle -> Tank
 handleTankObstacleBlocking tank obstacle =
     if tankCollidesObstacle tank obstacle
-        then revertTankPosition tank
+        then tank {tankBaseObject = (tankBaseObject tank) {velocity= (-vx,-vy)} }
         else tank
+          where (vx,vy) = velocity (tankBaseObject tank)
 
 --Obstáculos que causan daño inmediato
-handleTankObstacleDamageOnTouch :: Tank -> Obstacle -> Tank
-handleTankObstacleDamageOnTouch t o =
+handleTankObstacleDamage :: Tank -> Obstacle -> Tank
+handleTankObstacleDamage t o =
   if tankCollidesObstacle t o --Añadir cambio de direccion del barco
-    then t { health = reduceHealth (obstacleDamage o) (health t) }
+    then t { health = reduceHealth (obstacleDamage o) (health t), tankBaseObject = (tankBaseObject t) {velocity= (-vx,-vy)}}
     else t
+      where (vx,vy) = velocity (tankBaseObject t) 
 
---Minas temporizadas con daño en área
---
-handleTankObstacleTimedMine :: Tank -> Obstacle -> (Tank, Maybe Explosion)
-handleTankObstacleTimedMine tank obstacle =
-    if tankCollidesObstacle tank obstacle
-        then (tank, Just (Explosion (obstaclePosition obstacle) 0))
-        else (tank, Nothing)
+handleTankObstacleSwirl :: Tank -> Obstacle -> Tank
+handleTankObstacleSwirl t o = t {health = reduceHealth (obstacleDamage o) (health t)}
+
 
 -- Detecta si el tanque y el obstáculo están lo bastante cerca
 tankCollidesObstacle :: Tank -> Obstacle -> Bool
@@ -288,15 +305,6 @@ tankCollidesObstacle tank obstacle =
 obstacleCollisionRadius :: Obstacle -> Float
 obstacleCollisionRadius obstacle =
     case obstacleClass obstacle of
-        0 -> 40  -- bloqueantes grandes
-        1 -> 30  -- de daño directo
-        2 -> fromIntegral (damageRange obstacle)  -- minas
-        _ -> 30
-
--- Revierte el movimiento del tanque (simple: lo deja donde estaba)
-revertTankPosition :: Tank -> Tank
-revertTankPosition tank =
-    let base = tankBaseObject tank
-        (x, y) = position base
-        (vx, vy) = velocity base
-    in tank { tankBaseObject = base { position = (x - vx, y - vy) } }
+        0 -> 25  -- bloqueantes grandes
+        1 -> 25  -- de daño directo
+        _ -> fromIntegral (damageRange obstacle)  -- torbellino

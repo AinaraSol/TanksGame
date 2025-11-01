@@ -30,15 +30,15 @@ drawGame game =
        [background game] ++
         -- 2. Dibuja tanques VIVOS (filtro anti-zombies)
         [drawTank tank | tank <- tanks game, isRobotAlive tank] ++
-        
-        -- 3. Dibuja los proyectiles
-        [drawProyectile projectile game | projectile <- proyectiles game] ++
 
-        -- 4. Dibuja explosiones
+        -- 3. Dibuja explosiones
         [drawExplosion explosion game | explosion <- explosions game] ++
 
-        -- 5. Dibuja obstáculos
+        -- 4. Dibuja obstáculos
         [ drawObstacle obstacle | obstacle <- obstacles game ] ++ 
+
+        -- 5. Dibuja los proyectiles
+        [drawProyectile projectile game | projectile <- proyectiles game] ++
 
         -- 6. Dibuja el HUD
         hudPictures ++
