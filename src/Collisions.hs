@@ -246,3 +246,57 @@ reduceHealth dmg (Just h) =
     in if newHealth <= 0
        then Nothing       -- Murió
        else Just newHealth  -- Sigue vivo con menos vida
+
+
+-- Detecta y maneja colisiones tanque-obstáculo
+handleTankObstacle :: Tank -> Obstacle -> (Tank, Maybe Explosion)
+handleTankObstacle tank obstacle =
+    case obstacleClass obstacle of
+        0 -> (handleTankObstacleBlocking tank obstacle, Nothing)
+        1 -> (handleTankObstacleDamageOnTouch tank obstacle, Nothing)
+        2 -> handleTankObstacleTimedMine tank obstacle
+        _ -> (tank, Nothing)
+
+-- Obstaculo que bloquean el paso
+handleTankObstacleBlocking :: Tank -> Obstacle -> Tank
+handleTankObstacleBlocking tank obstacle =
+    if tankCollidesObstacle tank obstacle
+        then revertTankPosition tank
+        else tank
+
+--Obstáculos que causan daño inmediato
+handleTankObstacleDamageOnTouch :: Tank -> Obstacle -> Tank
+handleTankObstacleDamageOnTouch t o =
+  if tankCollidesObstacle t o --Añadir cambio de direccion del barco
+    then t { health = reduceHealth (obstacleDamage o) (health t) }
+    else t
+
+--Minas temporizadas con daño en área
+--
+handleTankObstacleTimedMine :: Tank -> Obstacle -> (Tank, Maybe Explosion)
+handleTankObstacleTimedMine tank obstacle =
+    if tankCollidesObstacle tank obstacle
+        then (tank, Just (Explosion (obstaclePosition obstacle) 0))
+        else (tank, Nothing)
+
+-- Detecta si el tanque y el obstáculo están lo bastante cerca
+tankCollidesObstacle :: Tank -> Obstacle -> Bool
+tankCollidesObstacle tank obstacle =
+    distanceBetween (position $ tankBaseObject tank) (obstaclePosition obstacle)
+        < obstacleCollisionRadius obstacle
+
+obstacleCollisionRadius :: Obstacle -> Float
+obstacleCollisionRadius obstacle =
+    case obstacleClass obstacle of
+        0 -> 40  -- bloqueantes grandes
+        1 -> 30  -- de daño directo
+        2 -> fromIntegral (damageRange obstacle)  -- minas
+        _ -> 30
+
+-- Revierte el movimiento del tanque (simple: lo deja donde estaba)
+revertTankPosition :: Tank -> Tank
+revertTankPosition tank =
+    let base = tankBaseObject tank
+        (x, y) = position base
+        (vx, vy) = velocity base
+    in tank { tankBaseObject = base { position = (x - vx, y - vy) } }
