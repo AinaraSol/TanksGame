@@ -58,14 +58,20 @@ updateGame dt gameState =
             gameAfterCollisions = checkCollisions movedTanksGame --
 
             updatedExplosions = [ explosion | explosion <- updateExplosions (explosions gameAfterCollisions) dt, explosionTime explosion <= 2] -- duracion de la explosion 1 segundo
-            updatedObstacles = updateObstacles (obstacles gameState) dt
+            updatedObstacles = updateObstacles (obstacles gameAfterCollisions) dt
+
+            obstaclesExplosions = [ Explosion (obstaclePosition obs) 0 | obs <- updatedObstacles, obstacleTime obs < Just 0 ]
+
+            newObstacles = [obs | obs <- updatedObstacles, obstacleTime obs >= Just 0]
+
+            newUpdatedExplosions = updatedExplosions ++ obstaclesExplosions
 
             -- REVISAMOS SI HAY UN GANADOR
             livingTanks = filter isRobotAlive (tanks gameAfterCollisions) --
             
             -- Preparamos el tiempo final del frame
             finalTime = gameTime gameAfterCollisions + dt
-            finalGame = gameAfterCollisions { gameTime = finalTime, explosions = updatedExplosions, obstacles = updatedObstacles }
+            finalGame = gameAfterCollisions { gameTime = finalTime, explosions = newUpdatedExplosions, obstacles = newObstacles }
 
         in 
           case livingTanks of
@@ -93,5 +99,5 @@ updateObstacle dt obstacle = obstacle { obstacleTime = newTime (obstacleTime obs
   where 
     newTime Nothing = Nothing
     newTime (Just t)
-      | obstacleClass obstacle == 3 = Just t
-      | otherwise = Just (t + dt)
+      | obstacleTrigger obstacle == True = Just (t - dt)
+      | otherwise = Just t

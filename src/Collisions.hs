@@ -162,7 +162,10 @@ checkCollisions gs =
       -- 3. eliminar proyectiles que ya colisionaron
       psAfter = removeCollidedProyectiles' ps tankProjCollisions
 
-  in gs { tanks = tsAfterObstacles, proyectiles = psAfter, explosions = explosions gs ++ newExplosions }
+      -- 4. Activar las minas con las que ha habido una colision
+      newObstacles = updateObstacleTriggers os tankObstaclesCollisions
+
+  in gs { tanks = tsAfterObstacles, proyectiles = psAfter, explosions = explosions gs ++ newExplosions, obstacles = newObstacles}
 
 -- Recibe una lista de proyectiles y una lista de colisiones (idTank,Proyectile) y devuelve la lista de proyectiles sin los proyectiles que han impactado
 removeCollidedProyectiles :: [Proyectile] -> [(Int, Proyectile)] -> [Proyectile]
@@ -250,6 +253,7 @@ applyRCollision' collisions t =
        then t
        -- MODIFICADO:
        else t { health = reduceHealth totalDamage (health t), tankBaseObject = (tankBaseObject t) {velocity= (0,0) }}
+
 -- reduceHealth: Quita vida y comprueba si el tanque muere (devuelve Nothing)
 reduceHealth :: Int -> Maybe Int -> Maybe Int
 reduceHealth _ Nothing = Nothing -- Si ya está muerto, sigue muerto
@@ -258,7 +262,6 @@ reduceHealth dmg (Just h) =
     in if newHealth <= 0
        then Nothing       -- Murió
        else Just newHealth  -- Sigue vivo con menos vida
-
 
 -- Detecta y maneja colisiones tanque-obstáculo
 handleTankObstacle :: [(Int, Obstacle)] -> Tank -> Tank
@@ -273,7 +276,7 @@ handleTankObstaclesCollision collision tank =
         0 -> handleTankObstacleBlocking tank (snd collision)
         1 -> handleTankObstacleDamage tank (snd collision)
         2 -> handleTankObstacleSwirl tank (snd collision)
-        _ -> tank
+        _ -> handleTankObstacleMine tank (snd collision)
 
 
 -- Obstaculo que bloquean el paso
@@ -295,10 +298,21 @@ handleTankObstacleDamage t o =
 handleTankObstacleSwirl :: Tank -> Obstacle -> Tank
 handleTankObstacleSwirl t o = t {health = reduceHealth (obstacleDamage o) (health t)}
 
+handleTankObstacleMine :: Tank -> Obstacle -> Tank
+handleTankObstacleMine t o
+  | obstacleTime o < Just 0 = t {health = reduceHealth (obstacleDamage o) (health t)}
+  | otherwise = t 
 
 -- Detecta si el tanque y el obstáculo están lo bastante cerca
 tankCollidesObstacle :: Tank -> Obstacle -> Bool
 tankCollidesObstacle tank obstacle =
     distanceBetween (position $ tankBaseObject tank) (obstaclePosition obstacle)
-        <  fromIntegral (damageRange obstacle)
+        < fromIntegral (damageRange obstacle)
 
+updateObstacleTriggers :: [Obstacle] -> [(Int, Obstacle)] -> [Obstacle]
+updateObstacleTriggers obstacles collisions =
+  [ if any (\(_, o) -> o == obstacle && obstacleClass o == 3) collisions
+      then obstacle { obstacleTrigger = True }
+      else obstacle
+  | obstacle <- obstacles
+  ]
