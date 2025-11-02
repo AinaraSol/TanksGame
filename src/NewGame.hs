@@ -11,6 +11,8 @@ import Data.Maybe
 
 import Graphics.Gloss.Interface.Pure.Game
 import Graphics.Gloss.Juicy
+import Graphics.Gloss
+
 
 -- Esta función crea un nuevo GameState con numTanks tanques y una lista de proyectilis vacía
 newGameState :: IO GameState
@@ -54,23 +56,25 @@ newObstacle obstacleClass = do
     ry <- randomRIO(-size, size)
     obstacleMaybePicture <- 
         if obstacleClass == 2
-            then loadJuicyPNG ("assets/Obstacles/remolino/water90015.png")
-            else loadJuicyPNG ("assets/Obstacles/obstacle_" ++ show (obstacleClass) ++ ".png")
+            then mapM (\i -> loadJuicyPNG ("assets/Obstacles/remolino/whirl_" ++ show i ++ ".png")) [0..13]
+            else mapM (\i -> loadJuicyPNG ("assets/Obstacles/obstacle_" ++ show (obstacleClass) ++ ".png")) [0]
     let 
         obstaclePosition = (rx, ry)
         obstacleDamage 
             | obstacleClass == 0 = 0
             | obstacleClass == 1 = 10
+            | obstacleClass == 2 = 2
             | otherwise = 30
         damageRange
-            | obstacleClass == 2 = 15
+            | obstacleClass == 2 = 50
+            | obstacleClass == 3 = 50
             | otherwise = 0
         obstacleTime
             | obstacleClass == 3 = Just 5
-            | otherwise = Nothing
+            | otherwise = Just 0
         obstacleTrigger = False
-        obstaclePicture = fromJust obstacleMaybePicture
-    return $ Obstacle obstacleClass obstaclePosition obstacleDamage damageRange obstacleTime obstacleTrigger obstaclePicture
+        obstaclePictures = map fromJust obstacleMaybePicture
+    return $ Obstacle obstacleClass obstaclePosition obstacleDamage damageRange obstacleTime obstacleTrigger obstaclePictures
 
 
 newTank :: Int -> IO Tank

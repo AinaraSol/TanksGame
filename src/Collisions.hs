@@ -300,11 +300,5 @@ handleTankObstacleSwirl t o = t {health = reduceHealth (obstacleDamage o) (healt
 tankCollidesObstacle :: Tank -> Obstacle -> Bool
 tankCollidesObstacle tank obstacle =
     distanceBetween (position $ tankBaseObject tank) (obstaclePosition obstacle)
-        < obstacleCollisionRadius obstacle
+        <  fromIntegral (damageRange obstacle)
 
-obstacleCollisionRadius :: Obstacle -> Float
-obstacleCollisionRadius obstacle =
-    case obstacleClass obstacle of
-        0 -> 25  -- bloqueantes grandes
-        1 -> 25  -- de daño directo
-        _ -> fromIntegral (damageRange obstacle)  -- torbellino

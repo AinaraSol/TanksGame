@@ -28,14 +28,16 @@ drawGame game =
     Pictures (
         -- 1. Dibuja el fondo 
        [background game] ++
-        -- 2. Dibuja tanques VIVOS (filtro anti-zombies)
+
+        -- 2. Dibuja obstáculos
+        [ drawObstacle obstacle | obstacle <- obstacles game ] ++ 
+
+        -- 3. Dibuja tanques VIVOS (filtro anti-zombies)
         [drawTank tank | tank <- tanks game, isRobotAlive tank] ++
 
-        -- 3. Dibuja explosiones
+        -- 4. Dibuja explosiones
         [drawExplosion explosion game | explosion <- explosions game] ++
 
-        -- 4. Dibuja obstáculos
-        [ drawObstacle obstacle | obstacle <- obstacles game ] ++ 
 
         -- 5. Dibuja los proyectiles
         [drawProyectile projectile game | projectile <- proyectiles game] ++
@@ -116,6 +118,16 @@ drawExplosion explosion game = translate (posX) (posY) $  explosionPicture
         (posX, posY) = explosionPosition explosion
 
 drawObstacle :: Obstacle -> Picture
-drawObstacle obstacle = translate (posX) (posY) $ obstaclePicture obstacle
+drawObstacle obstacle = Pictures [
+  translate (posX) (posY + 20) $ scaledObstaclePicture
+  -- translate (posX) (posY) $ color red $ circle $ fromIntegral $ damageRange obstacle -- Caja de colisiones para debuguear
+  ]
     where
-      (posX, posY) = obstaclePosition obstacle
+        dt = fromMaybe 100 $ obstacleTime obstacle
+        obstaclePicturesList = obstaclePictures obstacle
+        pictureIndex = (mod (floor (dt * 10)) (length obstaclePicturesList) )
+        obstaclePicture = obstaclePicturesList !! pictureIndex
+        scaledObstaclePicture = if obstacleClass obstacle == 2 
+                               then scale 0.1 0.1 obstaclePicture 
+                               else obstaclePicture
+        (posX, posY) = obstaclePosition obstacle

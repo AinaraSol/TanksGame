@@ -105,5 +105,5 @@ data Obstacle = Obstacle{
     damageRange :: Int,
     obstacleTime :: Maybe Float,
     obstacleTrigger :: Bool,
-    obstaclePicture :: Picture
+    obstaclePictures :: [Picture]
 } deriving (Show, Eq)
