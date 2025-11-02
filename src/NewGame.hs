@@ -25,12 +25,12 @@ newGameState = do
     let
         proyectileList = []
         explosionList = []
-        worldSize = (size, size)
+        worldSize = (sizeX, sizeY)
         gameTime = 0
         winner = Nothing
 
-        numberOfTilesX = fromIntegral $ ceiling (size / tileSize) -- la mitad de los cuadrados que caben en el ancho
-        numberOfTilesY = fromIntegral $ ceiling (size / tileSize) -- la mitad de los cuadrados que caben en el alto
+        numberOfTilesX = fromIntegral $ ceiling (sizeX / tileSize) -- la mitad de los cuadrados que caben en el ancho
+        numberOfTilesY = fromIntegral $ ceiling (sizeY / tileSize) -- la mitad de los cuadrados que caben en el alto
         
         -- Crear el fondo repitiendo la imagen del tile
         -- se calcula la posicion de cada tile en base a su índice y el tamaño del tile
@@ -52,8 +52,8 @@ newObstacles = do
 
 newObstacle :: Int -> IO Obstacle
 newObstacle obstacleClass = do
-    rx <- randomRIO(-size, size)
-    ry <- randomRIO(-size, size)
+    rx <- randomRIO(-sizeX, sizeX)
+    ry <- randomRIO(-sizeY, sizeY)
     obstacleMaybePicture <- 
         if obstacleClass == 2
             then mapM (\i -> loadJuicyPNG ("assets/Obstacles/remolino/whirl_" ++ show i ++ ".png")) [0..13]
@@ -63,14 +63,14 @@ newObstacle obstacleClass = do
         obstacleDamage 
             | obstacleClass == 0 = 0
             | obstacleClass == 1 = 10
-            | obstacleClass == 2 = 2
+            | obstacleClass == 2 = 5
             | otherwise = 30
         damageRange
-            | obstacleClass == 2 = 50
-            | obstacleClass == 3 = 50
+            | obstacleClass == 2 = 70
+            | obstacleClass == 3 = 100
             | otherwise = 0
         obstacleTime
-            | obstacleClass == 3 = Just 5
+            | obstacleClass == 3 = Just 2
             | otherwise = Just 0
         obstacleTrigger = False
         obstaclePictures = map fromJust obstacleMaybePicture
@@ -81,8 +81,8 @@ newTank :: Int -> IO Tank
 newTank id = do
     tankMaybePicture <- loadJuicyPNG ("assets/Boat/Boat_" ++ show (id `mod` 4 + 1) ++ ".png")
     turretMaybePicture <- loadJuicyPNG ("assets/Boat/Cannon.png")
-    rx <- randomRIO(-size, size)
-    ry <- randomRIO(-size, size)
+    rx <- randomRIO(-sizeX, sizeX)
+    ry <- randomRIO(-sizeY, sizeY)
     botAsigna <- randomRIO(0,3)
     let
         tankId = id

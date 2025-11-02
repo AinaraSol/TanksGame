@@ -19,7 +19,7 @@ main :: IO ()
 main = do
     newState <- newGameState -- Con esto convertimos el IO GameState a GameState
     play
-        (InWindow "Tanks Game" (round size*2,round size*2) (0,0))
+        (InWindow "Tanks Game" (round sizeX*2,round sizeY*2) (0,0))
         black
         60
         newState
@@ -99,5 +99,5 @@ updateObstacle dt obstacle = obstacle { obstacleTime = newTime (obstacleTime obs
   where 
     newTime Nothing = Nothing
     newTime (Just t)
-      | obstacleTrigger obstacle == True = Just (t - dt)
-      | otherwise = Just t
+      | obstacleTrigger obstacle == True = Just (t - dt*60)
+      | otherwise = Just (t + dt*60)

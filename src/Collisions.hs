@@ -118,6 +118,22 @@ proyectileVertices p =
       rotated =getVertices ((-hw,-hh),( hw,-hh),( hw, hh),(-hw, hh),theta)
   in (\(rx, ry) -> (cx + rx, cy + ry)) <$> rotated --mismo que anterior caso
 
+obstacleVertices :: Obstacle -> [Point]
+obstacleVertices o =
+  let (cx, cy) = obstaclePosition o
+      w 
+        | obstacleClass o == 0 = 80
+        | obstacleClass o == 1 = 120.0
+        | otherwise = 40.0
+      h 
+        | obstacleClass o == 0 = 80.0
+        | obstacleClass o == 2 = 40.0
+        | otherwise = 40.0
+      hw = w / 2
+      hh = h / 2
+  in [(-hw,-hh),( hw,-hh),( hw, hh),(-hw, hh)]  
+
+
 -- Detecta colisiones tanque-proyectil (lista de pares (Tanque, Proyectil) en colisión)
 detectRobotProyectileCollisions :: [Tank] -> [Proyectile] -> [(Int, Proyectile)]
 detectRobotProyectileCollisions tanks projs = -- recibe lista tanques y proyectiles
@@ -305,8 +321,9 @@ handleTankObstacleMine t o
 
 -- Detecta si el tanque y el obstáculo están lo bastante cerca
 tankCollidesObstacle :: Tank -> Obstacle -> Bool
-tankCollidesObstacle tank obstacle =
-    distanceBetween (position $ tankBaseObject tank) (obstaclePosition obstacle)
+tankCollidesObstacle tank obstacle = 
+  checkCollision (tankVertices tank) (obstacleVertices obstacle) ||
+  distanceBetween (position $ tankBaseObject tank) (obstaclePosition obstacle)
         < fromIntegral (damageRange obstacle)
 
 updateObstacleTriggers :: [Obstacle] -> [(Int, Obstacle)] -> [Obstacle]
