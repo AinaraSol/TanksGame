@@ -66,7 +66,7 @@ newObstacle obstacleClass = do
             | obstacleClass == 2 = 5
             | otherwise = 30
         damageRange
-            | obstacleClass == 2 = 70
+            | obstacleClass == 2 = 80
             | obstacleClass == 3 = 100
             | otherwise = 0
         obstacleTime

@@ -118,20 +118,25 @@ proyectileVertices p =
       rotated =getVertices ((-hw,-hh),( hw,-hh),( hw, hh),(-hw, hh),theta)
   in (\(rx, ry) -> (cx + rx, cy + ry)) <$> rotated --mismo que anterior caso
 
+-- Devuelve los vértices del obstáculo en coordenadas globales (trasladados a obstaclePosition)
 obstacleVertices :: Obstacle -> [Point]
 obstacleVertices o =
   let (cx, cy) = obstaclePosition o
-      w 
-        | obstacleClass o == 0 = 80
-        | obstacleClass o == 1 = 120.0
-        | otherwise = 40.0
-      h 
-        | obstacleClass o == 0 = 80.0
-        | obstacleClass o == 2 = 40.0
-        | otherwise = 40.0
+      w --ancho
+        | obstacleClass o == 0 = 50.0  -- Sirena
+        | obstacleClass o == 1 = 40.0  -- Roca
+        | obstacleClass o == 2 = 30.0  --Remolino
+        | otherwise = 20.0              -- Pequeños
+      h --altura
+        | obstacleClass o == 0 = 65.0  --Sirena
+        | obstacleClass o == 1 = 40.0  --Roca
+        | obstacleClass o == 2 = 60.0  --Remolino
+        | otherwise = 20.0
       hw = w / 2
       hh = h / 2
-  in [(-hw,-hh),( hw,-hh),( hw, hh),(-hw, hh)]  
+      verts = [(-hw,-hh),( hw,-hh),( hw, hh),(-hw, hh)]
+  in [ (cx + x, cy + y) | (x, y) <- verts ]
+
 
 
 -- Detecta colisiones tanque-proyectil (lista de pares (Tanque, Proyectil) en colisión)
@@ -298,10 +303,15 @@ handleTankObstaclesCollision collision tank =
 -- Obstaculo que bloquean el paso
 handleTankObstacleBlocking :: Tank -> Obstacle -> Tank
 handleTankObstacleBlocking tank obstacle =
-    if tankCollidesObstacle tank obstacle
-        then tank {tankBaseObject = (tankBaseObject tank) {velocity= (-vx,-vy)} }
-        else tank
-          where (vx,vy) = velocity (tankBaseObject tank)
+  if tankCollidesObstacle tank obstacle
+    then let bo = tankBaseObject tank
+             (x, y) = position bo
+             (vx, vy) = velocity bo
+             -- retrocede un pequeño paso para salir del obstáculo
+             backtrack = (x - vx * 2, y - vy * 2)
+         in tank { tankBaseObject = bo { position = backtrack, velocity = (-vx,-vy) } }
+    else tank
+
 
 --Obstáculos que causan daño inmediato
 handleTankObstacleDamage :: Tank -> Obstacle -> Tank
