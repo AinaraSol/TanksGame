@@ -18,17 +18,17 @@ projectileDamage :: Int
 projectileDamage = 20
 
 numSimpleObstacles, numDamageObstacles, numSwirlObstacles, numMineObstacles :: Int
-numSimpleObstacles = 6
+numSimpleObstacles = 3
 numDamageObstacles = 2
-numSwirlObstacles = 2
-numMineObstacles = 5
+numSwirlObstacles = 1
+numMineObstacles = 4
 
 --size :: Float
 --size = 400
 
-sizeX,sizeY :: Float
-sizeX = 700
-sizeY = 400
+sizeX, sizeY :: Float
+sizeX = 650
+sizeY = 340
 
 tileSize :: Float
 tileSize = 64 -- Tamaño de cada cuadrado del fondo en píxeles
