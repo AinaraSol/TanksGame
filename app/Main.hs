@@ -99,5 +99,6 @@ updateObstacle dt obstacle = obstacle { obstacleTime = newTime (obstacleTime obs
   where 
     newTime Nothing = Nothing
     newTime (Just t)
-      | obstacleTrigger obstacle == True = Just (t - dt*60)
-      | otherwise = Just (t + dt*60)
+      | obstacleClass obstacle == 3 && obstacleTrigger obstacle == False = Just t
+      | obstacleTrigger obstacle == True = Just (t - dt)
+      | otherwise = Just (t + dt)
