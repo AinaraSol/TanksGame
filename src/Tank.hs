@@ -6,7 +6,7 @@ import Entities
 import Types
 
 import Memory 
-import Data.Maybe (isJust)
+import Data.Maybe
 
 -- detectedAgent: Determinar si un agente ha detectado a otro en caso de encontrarse dentro del rango de su radar
 
@@ -157,3 +157,7 @@ isInBounds (x,y) (width, height)
 isTankInBounds :: Tank -> Size -> Bool
 isTankInBounds tank size = all (\vertice -> isInBounds vertice size) (tankVertices tank)
 
+applyDamage :: Tank -> Int -> Tank
+applyDamage tank damage = tank { health = Just ( healthValue - damage) }
+  where
+    healthValue = fromMaybe 0 (health tank)

@@ -62,16 +62,33 @@ updateGame dt gameState =
 
             obstaclesExplosions = [ Explosion (obstaclePosition obs) 0 | obs <- updatedObstacles, obstacleTime obs < Just 0 ]
 
+            -- Aplicamos el daño de las minas a los tanques que estan en el radio de alcance de las minas
+            tanksAfterExplosions = map applyExplosionDamage tanksList
+              where
+                tanksList = tanks gameAfterCollisions
+                explosions = filter isExploding updatedObstacles
+                
+                isExploding o = obstacleTime o <= Just 0
+                
+                applyExplosionDamage tank = foldl applyDamage tank damageSources
+                  where
+                    damageSources = [obstacleDamage o | o <- explosions, isInRange o tank]
+                    
+                isInRange obstacle tank = 
+                  distanceBetween (position (tankBaseObject tank)) (obstaclePosition obstacle) <= fromIntegral (damageRange obstacle)
+
+            gameAfterExplosions = gameAfterCollisions { tanks = tanksAfterExplosions }
+
             newObstacles = [obs | obs <- updatedObstacles, obstacleTime obs >= Just 0]
 
             newUpdatedExplosions = updatedExplosions ++ obstaclesExplosions
 
             -- REVISAMOS SI HAY UN GANADOR
-            livingTanks = filter isRobotAlive (tanks gameAfterCollisions) --
+            livingTanks = filter isRobotAlive (tanks gameAfterExplosions) --
             
             -- Preparamos el tiempo final del frame
-            finalTime = gameTime gameAfterCollisions + dt
-            finalGame = gameAfterCollisions { gameTime = finalTime, explosions = newUpdatedExplosions, obstacles = newObstacles }
+            finalTime = gameTime gameAfterExplosions + dt
+            finalGame = gameAfterExplosions { gameTime = finalTime, explosions = newUpdatedExplosions, obstacles = newObstacles }
 
         in 
           case livingTanks of
