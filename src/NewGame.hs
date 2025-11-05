@@ -48,12 +48,12 @@ newObstacles = do
     swirlObstacles <- replicateM numSwirlObstacles (newObstacle 2)
     mineObstacles <- replicateM numMineObstacles (newObstacle 3)
 
-    return $ simpleObstacles ++ damageObstacles ++ swirlObstacles ++ mineObstacles
+    return $ mineObstacles ++ simpleObstacles ++ damageObstacles ++ swirlObstacles
 
 newObstacle :: Int -> IO Obstacle
 newObstacle obstacleClass = do
-    rx <- randomRIO(-sizeX, sizeX)
-    ry <- randomRIO(-sizeY, sizeY)
+    rx <- randomRIO(-(sizeX - 40), (sizeX - 40))
+    ry <- randomRIO(-(sizeY - 40), (sizeY - 40))
     obstacleMaybePicture <- 
         if obstacleClass == 2
             then mapM (\i -> loadJuicyPNG ("assets/Obstacles/remolino/whirl_" ++ show i ++ ".png")) [0..13]
@@ -63,14 +63,14 @@ newObstacle obstacleClass = do
         obstacleDamage 
             | obstacleClass == 0 = 0
             | obstacleClass == 1 = 10
-            | obstacleClass == 2 = 5
+            | obstacleClass == 2 = 1
             | otherwise = 30
         damageRange
             | obstacleClass == 2 = 80
             | obstacleClass == 3 = 100
             | otherwise = 0
         obstacleTime
-            | obstacleClass == 3 = Just 2
+            | obstacleClass == 3 = Just 1
             | otherwise = Just 0
         obstacleTrigger = False
         obstaclePictures = map fromJust obstacleMaybePicture
@@ -81,8 +81,8 @@ newTank :: Int -> IO Tank
 newTank id = do
     tankMaybePicture <- loadJuicyPNG ("assets/Boat/Boat_" ++ show (id `mod` 4 + 1) ++ ".png")
     turretMaybePicture <- loadJuicyPNG ("assets/Boat/Cannon.png")
-    rx <- randomRIO(-sizeX, sizeX)
-    ry <- randomRIO(-sizeY, sizeY)
+    rx <- randomRIO(-(sizeX - 40), (sizeX - 40))
+    ry <- randomRIO(-(sizeY - 40), (sizeY - 40))
     botAsigna <- randomRIO(0,3)
     let
         tankId = id

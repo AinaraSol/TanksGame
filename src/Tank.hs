@@ -99,7 +99,7 @@ shootPostion t pos =
     newTank = t { turret = (turret t) {turretOrientation = angleToPosition} }
     vel = (cos radAngle * projectileSpeed, sin radAngle * projectileSpeed)
     --Para calcular la posicion del proyectil tenemos que ponerlo fuera del tanque, para que no cause una colision con el propio tanque
-    proyectilPos = (fst tankPosition + cos radAngle * tankLength, snd tankPosition + sin radAngle * tankLength)
+    proyectilPos = (fst tankPosition + cos radAngle * (tankLength/2), snd tankPosition + sin radAngle * (tankLength/2))
     proyectile = Proyectile tankPosition projectileDamage (BaseObject proyectilPos vel angleToPosition) -- El angulo del proyectil es en grados
   in (newTank, [proyectile])
 
@@ -130,7 +130,7 @@ tankVertices t =
       h = tankLength      -- alto total, por ej 10
       hw = w / 2    -- para que tenga el tanque el ancho 10 unidades desde su posición a la izq y 10 hacia la derecha
       hh = h / 2    -- lo mismo pero con la altura
-      rotated = getVertices ((-hw,-hh),( hw,-hh),( hw, hh),(-hw, hh),theta) -- calculamos la lista de vértices con la rotación hecha
+      rotated = getVertices ((-hw,-hh),(-hh , hw),( hw, hh),(hh, -hw),theta) -- calculamos la lista de vértices con la rotación hecha
   in map (\(rx,ry) -> (cx + rx, cy + ry)) rotated --asi quedaria alrededor del centro del tanque 
 
 tankVertices' :: Tank -> [Point]
@@ -139,7 +139,7 @@ tankVertices' t =
       theta = orientation (tankBaseObject t)
       w = tankWidth; h = tankLength
       hw = w / 2; hh = h / 2
-      rotated = getVertices ((-hw,-hh),( hw,-hh),( hw, hh),(-hw, hh), theta)
+      rotated = getVertices ((-hw,-hh),(-hh , hw),( hw, hh),(hh, -hw), theta)
   in (\(rx, ry) -> (cx + rx, cy + ry)) <$> rotated   -- <$> en vez de map para envolver la función lambda
 
 --        - isInBounds :: Point -> Size -> Bool. Verifica si un punto se encuentra dentro de los límites definidos por un tamaño dado.

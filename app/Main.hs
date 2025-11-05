@@ -21,7 +21,7 @@ main = do
     play
         (InWindow "Tanks Game" (round sizeX*2,round sizeY*2) (0,0))
         black
-        60
+        30
         newState
         drawGame
         handleInput

@@ -84,7 +84,9 @@ getAxes :: [Point] -> [Vector]
 getAxes []     = [] 
 getAxes [_]    = []
 getAxes vertices  =
-  let pairs   = zip vertices (tail vertices) ++ [(last vertices, head vertices)] -- aristas
+  -- let pairs   = zip vertices (tail vertices) ++ [(last vertices, head vertices)] -- aristas
+  let pairs = zip vertices (drop 1 (cycle vertices)) -- Lo mismo pero más eficiente
+
       axes = [ perp (sub v2 v1) | (v1,v2) <- pairs ]             -- lista de ejes sobre los que calcularemos cada proyeccion con projectPolygon
   in axes
 
@@ -92,7 +94,9 @@ getAxes' :: [Point] -> [Vector]
 getAxes' []  = []
 getAxes' [_] = []
 getAxes' vertices =
-  let pairs = zip vertices (tail vertices) ++ [(last vertices, head vertices)]
+  -- let pairs = zip vertices (tail vertices) ++ [(last vertices, head vertices)]
+  let pairs = zip vertices (drop 1 (cycle vertices)) -- Hacemos lo mismo pero mas eficientemente
+
   in (\(v1,v2) -> perp (sub v2 v1)) <$> pairs
 
 --Funciones Tarea 3
@@ -115,7 +119,7 @@ proyectileVertices p =
       h = 2.0
       hw = w / 2
       hh = h / 2
-      rotated =getVertices ((-hw,-hh),( hw,-hh),( hw, hh),(-hw, hh),theta)
+      rotated =getVertices ((-hw, -hh),(-hh, hw),(hw, hh),(hh, -hw),theta)
   in (\(rx, ry) -> (cx + rx, cy + ry)) <$> rotated --mismo que anterior caso
 
 -- Devuelve los vértices del obstáculo en coordenadas globales (trasladados a obstaclePosition)
@@ -125,16 +129,16 @@ obstacleVertices o =
       w --ancho
         | obstacleClass o == 0 = 50.0  -- Sirena
         | obstacleClass o == 1 = 40.0  -- Roca
-        | obstacleClass o == 2 = 30.0  --Remolino
-        | otherwise = 20.0              -- Pequeños
+        | obstacleClass o == 2 = 30.0  -- Remolino
+        | otherwise = 20.0             -- Pequeños
       h --altura
-        | obstacleClass o == 0 = 65.0  --Sirena
-        | obstacleClass o == 1 = 40.0  --Roca
-        | obstacleClass o == 2 = 60.0  --Remolino
+        | obstacleClass o == 0 = 75.0  -- Sirena
+        | obstacleClass o == 1 = 30.0  -- Roca
+        | obstacleClass o == 2 = 60.0  -- Remolino
         | otherwise = 20.0
       hw = w / 2
       hh = h / 2
-      verts = [(-hw,-hh),( hw,-hh),( hw, hh),(-hw, hh)]
+      verts = [(-hw, -hh),(-hh, hw),(hw, hh),(hh, -hw)]
   in [ (cx + x, cy + y) | (x, y) <- verts ]
 
 
