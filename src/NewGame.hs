@@ -2,6 +2,8 @@ module NewGame where
 
 import Entities
 import Constants
+import Geometry
+import Collisions
 
 import System.Random(randomRIO)
 
@@ -43,12 +45,37 @@ newGameState = do
 
 newObstacles :: IO [Obstacle]
 newObstacles = do
-    simpleObstacles <-  replicateM numSimpleObstacles (newObstacle 0)
-    damageObstacles <- replicateM numDamageObstacles (newObstacle 1)
-    swirlObstacles <- replicateM numSwirlObstacles (newObstacle 2)
-    mineObstacles <- replicateM numMineObstacles (newObstacle 3)
+    let obstacleSpecs =
+          replicate numSimpleObstacles 0 ++
+          replicate numDamageObstacles 1 ++
+          replicate numSwirlObstacles 2 ++
+          replicate numMineObstacles 3
+    generateObstaclesAvoidingOverlap obstacleSpecs []
 
-    return $ mineObstacles ++ simpleObstacles ++ damageObstacles ++ swirlObstacles
+-- | Genera una lista de obstáculos sin que se solapen entre sí.
+generateObstaclesAvoidingOverlap :: [Int] -> [Obstacle] -> IO [Obstacle]
+generateObstaclesAvoidingOverlap [] acc = return acc
+generateObstaclesAvoidingOverlap (cls:rest) acc = do
+    newObs <- generateUniqueObstacle cls acc 20 --numero de intentos para intentar generar un obstáculo que no se solape con los ya existentes
+    generateObstaclesAvoidingOverlap rest (acc ++ [newObs])
+
+-- | Genera un obstáculo aleatorio que no se solape con los existentes.
+generateUniqueObstacle :: Int -> [Obstacle] -> Int -> IO Obstacle
+generateUniqueObstacle _ _ 0 = error "No se pudo colocar obstáculo sin solapamiento tras muchos intentos."
+generateUniqueObstacle cls existing tries = do
+    candidate <- newObstacle cls
+    if any (obstaclesOverlap candidate) existing
+       then generateUniqueObstacle cls existing (tries - 1)
+       else return candidate
+
+-- | Determina si dos obstáculos se solapan usando su forma.
+obstaclesOverlap :: Obstacle -> Obstacle -> Bool
+obstaclesOverlap o1 o2 =
+    any (`pointInPolygon` verts2) verts1 || any (`pointInPolygon` verts1) verts2
+  where
+    verts1 = obstacleVertices o1
+    verts2 = obstacleVertices o2
+
 
 newObstacle :: Int -> IO Obstacle
 newObstacle obstacleClass = do

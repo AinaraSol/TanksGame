@@ -63,19 +63,7 @@ updateGame dt gameState =
             obstaclesExplosions = [ Explosion (obstaclePosition obs) 0 | obs <- updatedObstacles, obstacleTime obs < Just 0 ]
 
             -- Aplicamos el daño de las minas a los tanques que estan en el radio de alcance de las minas
-            tanksAfterExplosions = map applyExplosionDamage tanksList
-              where
-                tanksList = tanks gameAfterCollisions
-                explosions = filter isExploding updatedObstacles
-                
-                isExploding o = obstacleTime o <= Just 0
-                
-                applyExplosionDamage tank = foldl applyDamage tank damageSources
-                  where
-                    damageSources = [obstacleDamage o | o <- explosions, isInRange o tank]
-                    
-                isInRange obstacle tank = 
-                  distanceBetween (position (tankBaseObject tank)) (obstaclePosition obstacle) <= fromIntegral (damageRange obstacle)
+            tanksAfterExplosions = applyMineDamage (tanks gameAfterCollisions) updatedObstacles
 
             gameAfterExplosions = gameAfterCollisions { tanks = tanksAfterExplosions }
 
@@ -119,3 +107,4 @@ updateObstacle dt obstacle = obstacle { obstacleTime = newTime (obstacleTime obs
       | obstacleClass obstacle == 3 && obstacleTrigger obstacle == False = Just t
       | obstacleTrigger obstacle == True = Just (t - dt)
       | otherwise = Just (t + dt)
+

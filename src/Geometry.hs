@@ -56,6 +56,17 @@ getVertices (p1, p2, p3, p4, angle) =
     c = center pts
     rotated = rotatePoint c <$> pts <*> pure angle --patrón tipico 
 
+-- | Comprueba si un punto está dentro de un polígono (para evitar solapamientos)
+pointInPolygon :: Point -> [Point] -> Bool
+pointInPolygon (px, py) vertices =
+    odd . length . filter id $ zipWith edgeCross vertices (tail (cycle vertices))
+  where
+    edgeCross (x1, y1) (x2, y2)
+      | (y1 > py) /= (y2 > py) =
+          let xIntersect = (x2 - x1) * (py - y1) / (y2 - y1) + x1
+           in px < xIntersect
+      | otherwise = False
+
 rotatePoint :: Point -> Point -> Angle -> Point
 rotatePoint (cx, cy) (x, y) angle =
     ( roundN 2 (cx + (x' * cos rad - y' * sin rad)) -- roundN 2 x redondea el numero x y lo deja con dos decimales

@@ -252,6 +252,22 @@ applyPCollision'' collisions t =
        then t
        -- MODIFICADO:
        else t { health = reduceHealth totalDamage (health t) }
+
+applyMineDamage :: [Tank] -> [Obstacle] -> [Tank]
+applyMineDamage tanksList obstacles = map applyExplosionDamage tanksList
+  where
+    explosions = filter isExploding obstacles
+
+    isExploding o = obstacleTime o <= Just 0
+
+    applyExplosionDamage tank = foldl applyDamage tank damageSources
+      where
+        damageSources = [obstacleDamage o | o <- explosions, isInRange o tank]
+
+    isInRange obstacle tank =
+      distanceBetween (position (tankBaseObject tank)) (obstaclePosition obstacle)
+      <= fromIntegral (damageRange obstacle)
+
 -- Idem para las PCollisions robot robot
 collisionRobotRobotEvent :: [Tank] -> [(Int, Int)] -> [Tank]
 collisionRobotRobotEvent tanks collisions =
