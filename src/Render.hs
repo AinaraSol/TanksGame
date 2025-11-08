@@ -14,15 +14,28 @@ drawGame game =
         -- Para el HUD
         livingRobots = length (filter isRobotAlive (tanks game))
         activeProjectiles = length (proyectiles game)
+        currentTournament = tournament game
+        maxTournaments = getNumTournaments
+        currentTime = floor (gameTime game)
         
-        -- Dibuja el HUD en la esquina superior izquierda
         posX = - (fst (worldSize game)) + 10
         posY = (snd (worldSize game)) - 20
         hudPictures = [
-          translate posX posY $ scale 0.15 0.15 $ color white $ 
-            text ("Robots: " ++ show livingRobots),
+          -- torneo actual
+          translate posX posY $ scale 0.15 0.15 $ color yellow $ 
+            text ("Tournament: " ++ show currentTournament ++ "/" ++ show maxTournaments),
+          
+          -- ponemos el tiempo del torneo
           translate posX (posY - 20) $ scale 0.15 0.15 $ color white $ 
-            text ("Proyectiles: " ++ show activeProjectiles)
+            text ("Time: " ++ show currentTime ++ "s"),
+          
+          -- numero de barcos activos
+          translate posX (posY - 40) $ scale 0.15 0.15 $ color white $ 
+            text ("Ships alive: " ++ show livingRobots),
+          
+          -- numero de proyectiles
+          translate posX (posY - 60) $ scale 0.15 0.15 $ color white $ 
+            text ("Projectiles: " ++ show activeProjectiles)
           ]
     in
     Pictures (
@@ -38,39 +51,54 @@ drawGame game =
         -- 4. Dibuja explosiones
         [drawExplosion explosion game | explosion <- explosions game] ++
 
-
         -- 5. Dibuja los proyectiles
         [drawProyectile projectile game | projectile <- proyectiles game] ++
 
         -- 6. Dibuja el HUD
         hudPictures ++
 
-        -- 7. Dibuja el mensaje de victoria (si existe)
-        (drawWinner (winner game) (gameTime game))
+        -- 7. Dibuja el mensaje de victoria
+        (drawWinner (winner game) (gameTime game) currentTournament maxTournaments)
     )
+
 -- Función auxiliar para dibujar el mensaje de victoria
-drawWinner :: Maybe (Int, Float) -> Float -> [Picture]
-drawWinner Nothing _ = [] -- Si no hay ganador, no dibujes nada
-drawWinner (Just (winId, winTime)) currentTime =
+drawWinner :: Maybe (Int, Float) -> Float -> Int -> Int -> [Picture]
+drawWinner Nothing _ _ _ = []
+drawWinner (Just (winId, winTime)) currentTime currentT maxT =
     let
         elapsed = currentTime - winTime
-        remaining = 5.0 - elapsed -- 5 segundos de cuenta atrás
+        remaining = 5.0 - elapsed
+        
+        -- Determinar si es el último torneo
+        isLastTournament = currentT >= maxT
         
         -- Texto de la cuenta atrás
-        countdownText = if remaining <= 0
-                        then "Lista para cerrar"
-                        else "Cierre la ventana en " ++ show (ceiling remaining) ++ "s"
+        countdownText = if isLastTournament
+                        then if remaining <= 0
+                             then "Tournamets Finished! Close the window"
+                             else "Last Tournament. Closing in " ++ show (ceiling remaining) ++ "s"
+                        else if remaining <= 0
+                             then "Loading next tournament..."
+                             else "Next tournament in " ++ show (ceiling remaining) ++ "s (or press SPACE BAR)"
     in
     [
       -- Fondo
-      color (makeColor 0 0 0 0.7) (rectangleSolid 800 200),
+      color (makeColor 0 0 0 0.7) (rectangleSolid 800 250),
+      
+      -- Texto de torneo actual
+      translate (-150) 60 $ scale 0.3 0.3 $ color yellow $
+        text ("Tournament " ++ show currentT ++ "/" ++ show maxT),
       
       -- Texto principal (Centrado)
-      translate (-350) 25 $ scale 0.5 0.5 $ color white $
-        text ("¡Barco " ++ show winId ++ " ha ganado!"),
+      translate (-350) 10 $ scale 0.5 0.5 $ color white $
+        text ("The ship " ++ show winId ++ " won!"),
+      
+      -- Tiempo de victoria
+      translate (-150) (-30) $ scale 0.2 0.2 $ color white $
+        text ("Time: " ++ show (floor winTime) ++ " seconds"),
       
       -- Texto countdown (Pequeño, abajo y centrado)
-      translate (-115) (-50) $ scale 0.2 0.2 $ color white $
+      translate (-250) (-70) $ scale 0.2 0.2 $ color white $
         text countdownText
     ]
 

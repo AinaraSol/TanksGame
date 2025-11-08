@@ -92,7 +92,7 @@ newObstacle obstacleClass = do
             | obstacleClass == 0 = 0
             | obstacleClass == 1 = 10
             | obstacleClass == 2 = 1
-            | otherwise = 30
+            | otherwise = 50
         damageRange
             | obstacleClass == 2 = 80
             | obstacleClass == 3 = 100
