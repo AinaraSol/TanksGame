@@ -133,7 +133,7 @@ obstacleVertices o =
         | otherwise = 20.0             -- Pequeños
       h --altura
         | obstacleClass o == 0 = 75.0  -- Sirena
-        | obstacleClass o == 1 = 30.0  -- Roca
+        | obstacleClass o == 1 = 40.0  -- Roca
         | obstacleClass o == 2 = 60.0  -- Remolino
         | otherwise = 20.0
       hw = w / 2

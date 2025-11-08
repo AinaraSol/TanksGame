@@ -1,4 +1,20 @@
+-- Rutas de búsqueda de módulos
 :set -isrc
+:set -iapp
+
+-- Paquetes necesarios
+:set -package base
 :set -package random
-:set -package gloss-juicy
 :set -package gloss
+:set -package gloss-juicy
+:set -package QuickCheck
+
+-- Activar warnings y compilación a objeto para acelerar recargas
+:set -Wall
+:set -fobject-code
+
+-- Personalizar el prompt de GHCI
+:set prompt "TanksGame> "
+
+-- Cargar automáticamente el módulo principal al iniciar
+:load app/Main.hs
