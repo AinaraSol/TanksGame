@@ -115,7 +115,7 @@ handleActions t = foldl
 updateProyectiles :: [Proyectile] -> Float -> [Proyectile]
 updateProyectiles ps dt = 
     [p { proyectileBaseObject = (proyectileBaseObject p) { position = (x + vx * dt, y + vy * dt) } } | p <- ps, 
-    isInBounds (position (proyectileBaseObject p)) (sizeX,sizeY),
+    isInBounds (position (proyectileBaseObject p)) (getSizeX, getSizeY),
      let (x, y) = position (proyectileBaseObject p),
      let (vx, vy) = velocity (proyectileBaseObject p)
     ]

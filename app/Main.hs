@@ -9,6 +9,7 @@ import Types
 import Collisions
 import Render
 import NewGame
+import Config
 
 import Graphics.Gloss
 import Graphics.Gloss.Interface.Pure.Game
@@ -17,9 +18,9 @@ import Graphics.Gloss.Juicy
 
 main :: IO ()
 main = do
-    newState <- newGameState -- Con esto convertimos el IO GameState a GameState
+    newState <- newGameState 0 -- Con esto convertimos el IO GameState a GameState
     play
-        (InWindow "Tanks Game" (round sizeX*2,round sizeY*2) (0,0))
+        (InWindow "Tanks Game" (round getSizeX*2,round getSizeY*2) (0,0))
         black
         30
         newState
@@ -77,11 +78,13 @@ updateGame dt gameState =
             -- Preparamos el tiempo final del frame
             finalTime = gameTime gameAfterExplosions + dt
             finalGame = gameAfterExplosions { gameTime = finalTime, explosions = newUpdatedExplosions, obstacles = newObstacles }
+            
 
         in 
           case livingTanks of
              -- 3. Si se encuentra un ganador, graba SU ID y el TIEMPO ACTUAL
-             [winTank] -> finalGame { winner = Just (idTank winTank, finalTime) }
+
+             [winTank] -> finalGame { winner = Just (idTank winTank, finalTime), tournament = tournament finalGame + 1 }
              _         -> finalGame -- El juego sigue
 
 handleInput :: Event -> GameState -> GameState

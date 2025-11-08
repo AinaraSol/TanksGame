@@ -17,8 +17,8 @@ import Graphics.Gloss
 
 
 -- Esta función crea un nuevo GameState con numTanks tanques y una lista de proyectilis vacía
-newGameState :: IO GameState
-newGameState = do
+newGameState :: Int -> IO GameState
+newGameState t = do
     maybeBackground <- loadJuicyPNG ("assets/Background_tile.png")
     projectileMaybePicture <- loadJuicyPNG ("assets/Projectile.png")
     explosionMaybePictures <- mapM (\i -> loadJuicyPNG ("assets/Explosion/Explosion_" ++ show i ++ ".png")) [1..10]
@@ -27,12 +27,13 @@ newGameState = do
     let
         proyectileList = []
         explosionList = []
-        worldSize = (sizeX, sizeY)
+        worldSize = (getSizeX, getSizeY)
         gameTime = 0
         winner = Nothing
+        tournament = t
 
-        numberOfTilesX = fromIntegral $ ceiling (sizeX / tileSize) -- la mitad de los cuadrados que caben en el ancho
-        numberOfTilesY = fromIntegral $ ceiling (sizeY / tileSize) -- la mitad de los cuadrados que caben en el alto
+        numberOfTilesX = fromIntegral $ ceiling (getSizeX / tileSize) -- la mitad de los cuadrados que caben en el ancho
+        numberOfTilesY = fromIntegral $ ceiling (getSizeY / tileSize) -- la mitad de los cuadrados que caben en el alto
         
         -- Crear el fondo repitiendo la imagen del tile
         -- se calcula la posicion de cada tile en base a su índice y el tamaño del tile
@@ -41,7 +42,7 @@ newGameState = do
         projectilePicture = fromJust projectileMaybePicture
         explosionPictures = map fromJust explosionMaybePictures
 
-    return $ GameState tankList proyectileList explosionList obstacleList worldSize gameTime winner background projectilePicture explosionPictures
+    return $ GameState tankList proyectileList explosionList obstacleList worldSize gameTime winner background projectilePicture explosionPictures tournament
 
 newObstacles :: IO [Obstacle]
 newObstacles = do
@@ -79,8 +80,8 @@ obstaclesOverlap o1 o2 =
 
 newObstacle :: Int -> IO Obstacle
 newObstacle obstacleClass = do
-    rx <- randomRIO(-(sizeX - 40), (sizeX - 40))
-    ry <- randomRIO(-(sizeY - 40), (sizeY - 40))
+    rx <- randomRIO(-(getSizeX - 40), (getSizeX - 40))
+    ry <- randomRIO(-(getSizeY - 40), (getSizeY - 40))
     obstacleMaybePicture <- 
         if obstacleClass == 2
             then mapM (\i -> loadJuicyPNG ("assets/Obstacles/remolino/whirl_" ++ show i ++ ".png")) [0..13]
@@ -108,8 +109,8 @@ newTank :: Int -> IO Tank
 newTank id = do
     tankMaybePicture <- loadJuicyPNG ("assets/Boat/Boat_" ++ show (id `mod` 4 + 1) ++ ".png")
     turretMaybePicture <- loadJuicyPNG ("assets/Boat/Cannon.png")
-    rx <- randomRIO(-(sizeX - 40), (sizeX - 40))
-    ry <- randomRIO(-(sizeY - 40), (sizeY - 40))
+    rx <- randomRIO(-(getSizeX - 40), (getSizeX - 40))
+    ry <- randomRIO(-(getSizeY - 40), (getSizeY - 40))
     botAsigna <- randomRIO(0,3)
     let
         tankId = id

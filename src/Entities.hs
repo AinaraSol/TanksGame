@@ -71,7 +71,8 @@ data GameState = GameState {
     winner :: Maybe (Int, Float), -- <-- Guardamos al ganador del juego
     background :: Picture, -- Imagen de fondo del juego
     projectilePicture :: Picture, -- Imagen del proyectil
-    explosionPictures :: [Picture] -- Lista de imágenes para la animación de explosiones
+    explosionPictures :: [Picture], -- Lista de imágenes para la animación de explosiones
+    tournament :: Int
 } deriving (Show)
 
 data Explosion = Explosion {
@@ -107,3 +108,11 @@ data Obstacle = Obstacle{
     obstacleTrigger :: Bool,
     obstaclePictures :: [Picture]
 } deriving (Show, Eq)
+
+data Config = Config { 
+     botsList :: [String]
+    , sizeX :: Int
+    , sizeY :: Int
+    , maximunTime :: Float
+    , numTournaments :: Int
+  } deriving (Show, Read)

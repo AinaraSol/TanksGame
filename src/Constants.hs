@@ -1,5 +1,13 @@
 module Constants where
 
+import Entities
+import Config
+
+import System.IO.Unsafe (unsafePerformIO)
+
+globalConfig :: Config
+globalConfig = unsafePerformIO $ readConfig "src/config.txt"
+
 numTanks :: Int
 numTanks = 5
 
@@ -23,12 +31,17 @@ numDamageObstacles = 2
 numSwirlObstacles = 1
 numMineObstacles = 4
 
---size :: Float
---size = 400
-
-sizeX, sizeY :: Float
-sizeX = 650
-sizeY = 340
-
 tileSize :: Float
 tileSize = 64 -- Tamaño de cada cuadrado del fondo en píxeles
+
+getSizeX :: Float
+getSizeX = fromIntegral $ (sizeX globalConfig)
+
+getSizeY :: Float
+getSizeY = fromIntegral $ (sizeY globalConfig)
+
+getMaximumTime :: Float
+getMaximumTime = maximunTime globalConfig
+
+getNumTournaments :: Int
+getNumTournaments = numTournaments globalConfig
