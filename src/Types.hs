@@ -1,5 +1,6 @@
 module Types where
 
+
 --       - Point. Un punto 2D en el espacio.
 type Point = (Float, Float)
 
@@ -21,3 +22,4 @@ type Size = (Float, Float)
 --      - Bot. Creacion de un bot que recibe el estado del juego, un tank y devuelve una serie de acciones.
 
 type Velocity = Vector
+

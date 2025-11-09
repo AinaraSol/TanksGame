@@ -2,7 +2,7 @@ module Entities where
 
 import Types
 import Graphics.Gloss.Data.Picture (Picture)
-
+import Data.Map 
 type Bot = GameState -> Tank -> [Action]
 
 -- Action: Acciones que puede realizar un tanque
@@ -51,6 +51,7 @@ data Turret =
 
 data Proyectile = 
     Proyectile {
+        shooterId :: Int,
         origin::Position, 
         --proyectilePosition::Position,
         --angle::Angle,
@@ -72,7 +73,9 @@ data GameState = GameState {
     background :: Picture, -- Imagen de fondo del juego
     projectilePicture :: Picture, -- Imagen del proyectil
     explosionPictures :: [Picture], -- Lista de imágenes para la animación de explosiones
-    tournament :: Int
+    tournament :: Int,
+    currentStats :: CurrentStats, -- el diccionario que hemos creado para almacenar estadísticas,
+    statsSaved :: Bool
 } deriving (Show)
 
 data Explosion = Explosion {
@@ -116,3 +119,13 @@ data Config = Config {
     , maximunTime :: Float
     , numTournaments :: Int
   } deriving (Show, Read)
+
+data BotStats = BotStats {
+    hitsLanded :: Int,
+    damageDealt :: Int,
+    timeAlive :: Float,
+    isWinner :: Bool
+} deriving (Show, Eq, Read)
+
+type CurrentStats = Map Int BotStats -- No puede ir en módulo Types por dependencia cíclica
+

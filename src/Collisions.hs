@@ -7,6 +7,9 @@ import Tank
 
 import Data.Maybe (isJust)
 import Data.List (find)
+import qualified Data.Map as Map
+import Data.Foldable (foldl') -- usamos versión estricta para evitar stackOverflow
+import Entities (Proyectile(Proyectile))
 
 --TAREA 3
 
@@ -172,25 +175,28 @@ checkCollisions gs =
       es  = explosions gs
       os = obstacles gs
 
-      -- 1. detectar colisiones
+      -- 1. Detectar colisiones
       tankProjCollisions = detectRobotProyectileCollisions ts ps
       tankTankCollisions = detectRobotRobotCollisions ts
       tankObstaclesCollisions = detectRobotObstacleCollisions ts os
 
-      -- 2. aplicar efectos
+      -- 2. Estadisticas de impactos
+      statsWithHits = updateStatsFromHits (currentStats gs) tankProjCollisions
+      
+      -- 3. Aplicar efectos
       tsAfterProj = collisionRobotProyectileEvent' ts tankProjCollisions 
       tsAfterBoth = collisionRobotRobotEvent' tsAfterProj tankTankCollisions --la lista de tanques con vida actualizada tras contar el daño de los proyectiles
       tsAfterObstacles = collisionRobotObstacleEvent tsAfterBoth tankObstaclesCollisions
 
       newExplosions = generateExplosions [snd collision | collision <- tankProjCollisions]
 
-      -- 3. eliminar proyectiles que ya colisionaron
+      -- 4. Eliminar proyectiles que ya colisionaron
       psAfter = removeCollidedProyectiles' ps tankProjCollisions
 
-      -- 4. Activar las minas con las que ha habido una colision
+      -- 5. Activar las minas con las que ha habido una colision
       newObstacles = updateObstacleTriggers os tankObstaclesCollisions
 
-  in gs { tanks = tsAfterObstacles, proyectiles = psAfter, explosions = explosions gs ++ newExplosions, obstacles = newObstacles}
+  in gs { tanks = tsAfterObstacles, proyectiles = psAfter, explosions = explosions gs ++ newExplosions, obstacles = newObstacles, currentStats = statsWithHits}
 
 -- Recibe una lista de proyectiles y una lista de colisiones (idTank,Proyectile) y devuelve la lista de proyectiles sin los proyectiles que han impactado
 removeCollidedProyectiles :: [Proyectile] -> [(Int, Proyectile)] -> [Proyectile]
@@ -363,3 +369,17 @@ updateObstacleTriggers obstacles collisions =
       else obstacle
   | obstacle <- obstacles
   ]
+
+
+updateStatsFromHits :: CurrentStats -> [(Int, Proyectile)] -> CurrentStats
+updateStatsFromHits = foldl' updateSingleHit
+  where
+    updateSingleHit :: CurrentStats -> (Int, Proyectile) -> CurrentStats
+    updateSingleHit stats (targetId, projectile) =
+      let shooter = shooterId projectile
+          dmg = damage projectile
+      in if shooter /= targetId -- no cuenta disparos a si mismos
+         then Map.adjust (\s -> s {hitsLanded = hitsLanded s + 1,
+                                  damageDealt = damageDealt s + dmg})
+                          shooter stats
+         else stats 

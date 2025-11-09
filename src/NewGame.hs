@@ -10,7 +10,7 @@ import System.Random(randomRIO)
 import Control.Monad(replicateM)
 
 import Data.Maybe
-
+import qualified Data.Map as Map --para evitar conflictos de funciones con mismo nombre diferente tipo
 import Graphics.Gloss.Interface.Pure.Game
 import Graphics.Gloss.Juicy
 import Graphics.Gloss
@@ -31,7 +31,8 @@ newGameState t = do
         gameTime = 0
         winner = Nothing
         tournament = t
-
+        initialStats = Map.fromList [(idTank t, BotStats 0 0 0 False) | t <- tankList]
+        statsSaved = False
         numberOfTilesX = fromIntegral $ ceiling (getSizeX / tileSize) -- la mitad de los cuadrados que caben en el ancho
         numberOfTilesY = fromIntegral $ ceiling (getSizeY / tileSize) -- la mitad de los cuadrados que caben en el alto
         
@@ -42,7 +43,7 @@ newGameState t = do
         projectilePicture = fromJust projectileMaybePicture
         explosionPictures = map fromJust explosionMaybePictures
 
-    return $ GameState tankList proyectileList explosionList obstacleList worldSize gameTime winner background projectilePicture explosionPictures tournament
+    return $ GameState tankList proyectileList explosionList obstacleList worldSize gameTime winner background projectilePicture explosionPictures tournament initialStats statsSaved
 
 newObstacles :: IO [Obstacle]
 newObstacles = do

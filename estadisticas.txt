@@ -1,0 +1,78 @@
+=== INICIO DE SESI‡N DE TORNEOS ===
+
+--- Torneo 1 (Duraci¢n: 39s) ---
+
+  Bot 1:
+    - Da§o Infligido: 80
+    - Impactos:       4
+    - Tiempo Vivo:    17s (43%)
+  Bot 2: [GANADOR]
+    - Da§o Infligido: 80
+    - Impactos:       4
+    - Tiempo Vivo:    34s (87%)
+  Bot 4:
+    - Da§o Infligido: 60
+    - Impactos:       3
+    - Tiempo Vivo:    34s (87%)
+  Bot 5:
+    - Da§o Infligido: 20
+    - Impactos:       1
+    - Tiempo Vivo:    18s (45%)
+  Bot 3:
+    - Da§o Infligido: 0
+    - Impactos:       0
+    - Tiempo Vivo:    7s (18%)
+
+--- Torneo 2 (Duraci¢n: 21s) ---
+
+  Bot 1:
+    - Da§o Infligido: 100
+    - Impactos:       5
+    - Tiempo Vivo:    16s (76%)
+  Bot 4:
+    - Da§o Infligido: 100
+    - Impactos:       5
+    - Tiempo Vivo:    16s (76%)
+  Bot 2: [GANADOR]
+    - Da§o Infligido: 60
+    - Impactos:       3
+    - Tiempo Vivo:    16s (76%)
+  Bot 5:
+    - Da§o Infligido: 60
+    - Impactos:       3
+    - Tiempo Vivo:    10s (47%)
+  Bot 3:
+    - Da§o Infligido: 40
+    - Impactos:       2
+    - Tiempo Vivo:    5s (24%)
+
+--- Torneo 3 (Duraci¢n: 44s) ---
+
+  Bot 1: [GANADOR]
+    - Da§o Infligido: 120
+    - Impactos:       6
+    - Tiempo Vivo:    39s (88%)
+  Bot 5:
+    - Da§o Infligido: 60
+    - Impactos:       3
+    - Tiempo Vivo:    19s (43%)
+  Bot 3:
+    - Da§o Infligido: 40
+    - Impactos:       2
+    - Tiempo Vivo:    39s (88%)
+  Bot 2:
+    - Da§o Infligido: 20
+    - Impactos:       1
+    - Tiempo Vivo:    3s (7%)
+  Bot 4:
+    - Da§o Infligido: 0
+    - Impactos:       0
+    - Tiempo Vivo:    11s (25%)
+
+
+=== RESUMEN DE TODOS LOS TORNEOS ===
+  (La generaci¢n de estad°sticas agregadas (medias, m†ximos)
+   requerir°a un estado global persistente entre torneos
+   o un parser para leer los datos ya escritos.)
+   Total de torneos jugados: 3
+   Tiempo total de juego: 44s
