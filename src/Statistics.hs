@@ -1,21 +1,21 @@
 module Statistics where
 
 import Entities
-import Text.Printf (printf)
-import Data.List (maximumBy)
+import Text.Printf (printf) -- Importar la función printf para formatear cadenas.
+import Data.List (maximumBy) -- Importar maximumBy, que permite encontrar el máximo de una lista según un criterio.
 
--- Function para borrar las estadísticas (si es necesario)
+-- Funcion para borrar las estadísticas (si es necesario)
 clearStatisticsFile :: IO ()
 clearStatisticsFile = writeFile "estadisticas.txt" ""
 
 -- Función para guardar las estadísticas en un archivo de texto (estadisticas.txt)
 saveStatistics :: Statistics -> IO ()
 saveStatistics statistics = do
-    if writtenFlag statistics
+    if writtenFlag statistics 
       then return () -- Si ya se han escrito, no hacer nada
     else do
-      let fileName = "estadisticas.txt"
-      appendFile fileName (formatStatistics statistics)
+      let fileName = "estadisticas.txt" -- Nombre del archivo donde se guardarán las estadísticas
+      appendFile fileName (formatStatistics statistics) -- Añadir las estadísticas formateadas al archivo
 
 
 -- Formatear las estadísticas para guardarlas en el archivo
@@ -39,7 +39,7 @@ formatTankStatistics ts =
     "\tImpactos: " ++ show (numHits ts) ++ "\n" ++
     "\tDaño Recibido de Obstáculos: " ++ show (damageFromObstacles ts) ++ "\n\n"
 
-
+-- Guardar estadísticas agregadas de todos los torneos
 saveAggregatedStatistics :: [Statistics] -> IO ()
 saveAggregatedStatistics stats = do
     if writtenFlag (last stats)
@@ -60,10 +60,10 @@ saveAggregatedStatistics stats = do
       appendFile fileName "=== Estadísticas Agregadas por Barco ===\n\n"
       let tankIds = map tankId (statisticsByTank (head stats)) 
       let aggregatedStats = map (\tid -> aggregateTankStatistics (concatMap statisticsByTank stats) tid totalTime) tankIds -- Calcula estadísticas agregadas por cada barco
-      let formattedStats = concatMap (\stats -> formatTankAggregatedStatistics stats totalTime) aggregatedStats -- Convierte a string legible las estadísticas agregadas por cada barco
+      let formattedStats = concatMap (\s -> formatTankAggregatedStatistics s totalTime (length stats)) aggregatedStats -- Convierte a string legible las estadísticas agregadas por cada barco
       appendFile fileName formattedStats
 
-
+-- Calcular estadísticas agregadas por barco
 aggregateTankStatistics :: [TankStatistics] -> Int -> Float -> TankStatistics
 aggregateTankStatistics stats id totalTime =
     let filteredStats = filter (\ts -> tankId ts == id) stats
@@ -79,12 +79,15 @@ aggregateTankStatistics stats id totalTime =
         damageFromObstacles = totalDamageFromObstacles
     }
 
-formatTankAggregatedStatistics :: TankStatistics -> Float -> String
-formatTankAggregatedStatistics ts totalTime =
+formatTankAggregatedStatistics :: TankStatistics -> Float -> Int -> String
+formatTankAggregatedStatistics ts totalTime numOfTournaments =
     let hitRate :: Float
         hitRate = if numShotsFired ts == 0 then 0.0 else fromIntegral (numHits ts) / fromIntegral (numShotsFired ts) * 100
         survivalRate :: Float
         survivalRate = (timeAlive ts / totalTime) * 100
+        hitPerGame :: Float
+        hitPerGame = fromIntegral (numHits ts) / fromIntegral numOfTournaments
+
     in
     "\t== Barco " ++ show (tankId ts) ++ " ==\n" ++
     "\tTiempo Vivo Total: " ++ printf "%.2f" (timeAlive ts) ++ " segundos\n" ++
@@ -92,5 +95,6 @@ formatTankAggregatedStatistics ts totalTime =
     "\tImpactos Totales: " ++ show (numHits ts) ++ "\n" ++
     "\tTasa de Impacto: " ++ printf "%.2f" hitRate ++ " %\n" ++
     "\tPorcentaje del tiempo vivo: " ++ printf "%.2f" survivalRate ++ " %\n" ++
-    "\tDaño Total Recibido de Obstáculos: " ++ show (damageFromObstacles ts) ++ "\n\n"
+    "\tDaño Total Recibido de Obstáculos: " ++ show (damageFromObstacles ts) ++ "\n" ++
+    "\tMedia de impactos por Juego: " ++ printf "%.2f" hitPerGame ++ "\n\n" 
 

@@ -20,7 +20,7 @@ import Graphics.Gloss.Data.Color
 main :: IO ()
 main = do
     clearStatisticsFile
-    newState <- newGameState 1 []
+    newState <- newGameState 1 [] -- Inicializar el estado del juego con el primer torneo y estadísticas vacías
     playIO
         (InWindow "Tanks Game" (round getSizeX*2, round getSizeY*2) (0,0))
         black
