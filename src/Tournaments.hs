@@ -88,6 +88,8 @@ updateGameLogic dt gameState =
     in 
       case livingTanks of
          [winTank] -> finalGame { winner = Just (idTank winTank, finalTime) }
+         [] | finalTime >= getMaximumTime -> finalGame { winner = Just (99, finalTime) } -- En caso de que haya un empate see pone el numero 99
+         _ | finalTime >= getMaximumTime -> finalGame { winner = Just (idTank (livingTanks !! 0), finalTime) }
          _         -> finalGame
 
 

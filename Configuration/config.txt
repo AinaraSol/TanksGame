@@ -2,6 +2,6 @@ Config {
     botsList = ["aggressiveBot", "opportunistBot", "chaserBot", "runnerBot"]
   , sizeX = 650
   , sizeY = 340
-  , maximunTime = 180.0
+  , maximunTime = 60.0
   , numTournaments = 3
   }
