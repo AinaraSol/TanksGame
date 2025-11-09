@@ -177,10 +177,17 @@ checkCollisions gs =
       tankTankCollisions = detectRobotRobotCollisions ts
       tankObstaclesCollisions = detectRobotObstacleCollisions ts os
 
+      -- 1.1 Update statistics for projectile hits
+      updatedStatsForProjectileHits = updateStatisticsForProjectileHits (statistics gs) tankProjCollisions
+
       -- 2. aplicar efectos
       tsAfterProj = collisionRobotProyectileEvent' ts tankProjCollisions 
       tsAfterBoth = collisionRobotRobotEvent' tsAfterProj tankTankCollisions --la lista de tanques con vida actualizada tras contar el daño de los proyectiles
       tsAfterObstacles = collisionRobotObstacleEvent tsAfterBoth tankObstaclesCollisions
+
+      -- 2.1 Update statistics for obstacles
+      updatedStats = updateStatisticsForObstacles (updatedStatsForProjectileHits) tsAfterBoth tsAfterObstacles
+
 
       newExplosions = generateExplosions [snd collision | collision <- tankProjCollisions]
 
@@ -190,7 +197,7 @@ checkCollisions gs =
       -- 4. Activar las minas con las que ha habido una colision
       newObstacles = updateObstacleTriggers os tankObstaclesCollisions
 
-  in gs { tanks = tsAfterObstacles, proyectiles = psAfter, explosions = explosions gs ++ newExplosions, obstacles = newObstacles}
+  in gs { tanks = tsAfterObstacles, proyectiles = psAfter, explosions = explosions gs ++ newExplosions, obstacles = newObstacles , statistics = updatedStats }
 
 -- Recibe una lista de proyectiles y una lista de colisiones (idTank,Proyectile) y devuelve la lista de proyectiles sin los proyectiles que han impactado
 removeCollidedProyectiles :: [Proyectile] -> [(Int, Proyectile)] -> [Proyectile]
@@ -363,3 +370,51 @@ updateObstacleTriggers obstacles collisions =
       else obstacle
   | obstacle <- obstacles
   ]
+
+-- Actualiza el numero de impactos de cada barco y devuelve las estadísticas actualizadas
+updateStatisticsForProjectileHits :: Statistics -> [(Int, Proyectile)] -> Statistics
+updateStatisticsForProjectileHits stats collisions =
+  let updatedTankStats = foldl updateTankStats (statisticsByTank stats) collisions
+  in stats { statisticsByTank = updatedTankStats }
+  where
+    updateTankStats tankStats (_, proj) = map (updateSingleTankStats (tankIdOwner proj)) tankStats
+    updateSingleTankStats projOwnerId ts
+      | tankId ts == projOwnerId =
+          ts { numHits = numHits ts + 1 }
+      | otherwise = ts
+
+
+-- Calcula el daño recibido por obstáculos y el número de barco destruidos por obstáculos y actualiza las estadísticas
+updateStatisticsForObstacles :: Statistics -> [Tank] -> [Tank] -> Statistics
+updateStatisticsForObstacles stats tanksBefore tanksAfter =
+  let
+      destroyedByObstacles = length [ () | (tBefore, tAfter) <- zip tanksBefore tanksAfter,
+                                           isRobotAlive tBefore,
+                                           not (isRobotAlive tAfter),
+                                           tankDiedToObstacle tBefore tAfter ]
+      currentCount = numTanksDestroyedByObstacles stats
+      updatedTankStats = foldl updateTankDamageStats (statisticsByTank stats) (zip tanksBefore tanksAfter)
+  in stats { numTanksDestroyedByObstacles = currentCount + destroyedByObstacles,
+             statisticsByTank = updatedTankStats }
+  where
+    tankDiedToObstacle tBefore tAfter =
+      let healthBefore = health tBefore
+          healthAfter = health tAfter
+      in case (healthBefore, healthAfter) of
+           (Just hBefore, Nothing) -> hBefore > 0  -- Murió y tenía vida antes
+           _                      -> False         -- No murió o ya estaba muerto
+    
+    updateTankDamageStats tankStats (tBefore, tAfter) =
+      let damage = calculateObstacleDamage tBefore tAfter
+      in map (updateSingleTankDamageStats (idTank tBefore) damage) tankStats
+    
+    updateSingleTankDamageStats tankIdToUpdate damageTaken ts
+      | tankId ts == tankIdToUpdate =
+          ts { damageFromObstacles = damageFromObstacles ts + damageTaken }
+      | otherwise = ts
+    
+    calculateObstacleDamage tBefore tAfter =
+      case (health tBefore, health tAfter) of
+        (Just hBefore, Just hAfter) -> max 0 (hBefore - hAfter)
+        (Just hBefore, Nothing)     -> hBefore
+        _                          -> 0

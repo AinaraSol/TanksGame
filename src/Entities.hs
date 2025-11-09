@@ -55,7 +55,8 @@ data Proyectile =
         --proyectilePosition::Position,
         --angle::Angle,
         damage :: Int,
-        proyectileBaseObject :: BaseObject -- Composicion
+        proyectileBaseObject :: BaseObject, -- Composicion
+        tankIdOwner :: Int
     }
     deriving (Show,Eq)
 
@@ -72,7 +73,9 @@ data GameState = GameState {
     background :: Picture, -- Imagen de fondo del juego
     projectilePicture :: Picture, -- Imagen del proyectil
     explosionPictures :: [Picture], -- Lista de imágenes para la animación de explosiones
-    tournament :: Int
+    tournament :: Int,
+    statistics :: Statistics,
+    totalStatistics :: [Statistics]
 } deriving (Show)
 
 data Explosion = Explosion {
@@ -116,3 +119,24 @@ data Config = Config {
     , maximunTime :: Float
     , numTournaments :: Int
   } deriving (Show, Read)
+
+
+-- Estadísticas de una partida
+data Statistics = Statistics {
+    tournamentId :: Int,
+    winnerId :: Maybe Int,
+    duration :: Float,
+    numTanksDestroyedByObstacles :: Int,
+    statisticsByTank :: [TankStatistics],
+    writtenFlag :: Bool -- Indica si las estadísticas ya han sido escritas en el archivo
+} deriving (Show)
+
+-- Estadísticas por tanque
+data TankStatistics = TankStatistics {
+    tankId :: Int,
+    numShotsFired :: Int,
+    numHits :: Int,
+    timeAlive :: Float,
+    damageFromObstacles :: Int
+
+} deriving (Show)

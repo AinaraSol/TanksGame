@@ -6,6 +6,7 @@ import Constants
 import Bots
 import Tank
 import Collisions
+import Statistics
 
 import Graphics.Gloss.Interface.IO.Game
 
@@ -17,24 +18,34 @@ runTournament dt gameState =
         let elapsed = gameTime gameState - winTime
             maxTournaments = getNumTournaments
             currentTournament = tournament gameState
+            stats = (statistics gameState) { winnerId = Just winId, duration = winTime } -- Actualizar estadísticas con el ganador y duración
         in
           -- Si han pasado 5 segundos desde la victoria
           if elapsed >= 5.0
-             then
+            then do
+              -- Guardar estadísticas de la partida
+              saveStatistics stats -- Guardar las estadísticas en estadisticas.txt
+
                -- Si quedan torneos por jugar
-               if currentTournament < maxTournaments
-                  then do
-                    -- REINICIAR con el siguiente torneo
-                    putStrLn $ "\n=== Torneo " ++ show currentTournament ++ " finalizado ==="
-                    putStrLn $ "Ganador: Tanque " ++ show winId ++ " en tiempo " ++ show winTime ++ "s"
-                    putStrLn $ "\n=== Iniciando Torneo " ++ show (currentTournament + 1) ++ " ==="
-                    newGameState (currentTournament + 1)
-                  else do
-                    return gameState
-             else
-               -- Seguir mostrando la pantalla de victoria
-               return $ gameState { gameTime = gameTime gameState + dt }
-      
+              if currentTournament < maxTournaments
+                then do
+                  -- REINICIAR con el siguiente torneo
+                  putStrLn $ "\n=== Torneo " ++ show currentTournament ++ " finalizado ==="
+                  putStrLn $ "Ganador: Tanque " ++ show winId ++ " en tiempo " ++ show winTime ++ "s"
+                  putStrLn $ "\n=== Iniciando Torneo " ++ show (currentTournament + 1) ++ " ==="
+                  newGameState (currentTournament + 1) (totalStatistics gameState ++ [stats])
+                else do
+                  let newTotalStats = totalStatistics gameState ++ [stats]
+                  saveAggregatedStatistics newTotalStats
+                  -- Marcar estadísticas como escritas
+                  return gameState 
+                    { statistics = stats { writtenFlag = True }
+                    , totalStatistics = map (\s -> s { writtenFlag = True }) newTotalStats 
+                    }
+              else
+                -- Seguir mostrando la pantalla de victoria
+                return $ gameState { gameTime = gameTime gameState + dt }
+
       -- Si no hay ganador, ejecuta el juego normal
       Nothing -> return $ updateGameLogic dt gameState
 
@@ -47,6 +58,7 @@ updateGameLogic dt gameState =
 
         newTanks = [ reduceCooldown( updatePosition tank dt ws ) dt | (tank, _) <- actions, isRobotAlive tank ]
         newProyectiles = concat [ projectile | (_, projectile) <- actions ]
+
         allProyectiles = proyectiles gameState ++ newProyectiles
         updatedProyectiles = updateProyectiles allProyectiles dt
 
@@ -66,9 +78,12 @@ updateGameLogic dt gameState =
         newObstacles = [obs | obs <- updatedObstacles, obstacleTime obs >= Just 0]
         newUpdatedExplosions = updatedExplosions ++ obstaclesExplosions
 
+        updatedStatsWithShots = updateStatisticsShots (statistics gameAfterExplosions) newProyectiles
+        updatedStats = updateStatisticsTimeAlive updatedStatsWithShots dt (tanks gameState) -- Usamos los tanques antes de actualizar para contar el tiempo de vida correctamente
+
         livingTanks = filter isRobotAlive (tanks gameAfterExplosions)
         finalTime = gameTime gameAfterExplosions + dt
-        finalGame = gameAfterExplosions { gameTime = finalTime, explosions = newUpdatedExplosions, obstacles = newObstacles }
+        finalGame = gameAfterExplosions { gameTime = finalTime, explosions = newUpdatedExplosions, obstacles = newObstacles, statistics = updatedStats }
 
     in 
       case livingTanks of
@@ -83,13 +98,15 @@ handleInputIO (EventKey (SpecialKey KeySpace) Down _ _) gameState =
         Just (winId, winTime) -> 
             let maxTournaments = getNumTournaments
                 currentTournament = tournament gameState
+                stats = (statistics gameState) { winnerId = Just winId, duration = winTime } -- Actualizar estadísticas con el ganador y duración
             in
+                saveStatistics stats >>  -- Guardar estadísticas de la partida
                 if currentTournament < maxTournaments
                     then do
                         putStrLn $ "\n=== Torneo " ++ show currentTournament ++ " finalizado (saltado) ==="
                         putStrLn $ "Ganador: Tanque " ++ show winId ++ " en tiempo " ++ show winTime ++ "s"
                         putStrLn $ "\n=== Iniciando Torneo " ++ show (currentTournament + 1) ++ " ==="
-                        newGameState (currentTournament + 1)
+                        newGameState (currentTournament + 1) (totalStatistics gameState ++ [stats])
                     else return gameState
         Nothing -> return gameState
 handleInputIO _ g = return g
@@ -115,3 +132,31 @@ updateObstacle dt obstacle = obstacle { obstacleTime = newTime (obstacleTime obs
       | obstacleClass obstacle == 3 && obstacleTrigger obstacle == False = Just t
       | obstacleTrigger obstacle == True = Just (t - dt)
       | otherwise = Just (t + dt)
+
+updateStatisticsShots :: Statistics -> [Proyectile] -> Statistics
+updateStatisticsShots stats projectiles = 
+    let
+        tankIds = map tankIdOwner projectiles
+        updatedTankStats = map (updateTankShots tankIds) (statisticsByTank stats)
+    in
+        stats { statisticsByTank = updatedTankStats }
+  where
+    updateTankShots :: [Int] -> TankStatistics -> TankStatistics
+    updateTankShots tankIds ts =
+        let shotsFired = length $ filter (== tankId ts) tankIds
+        in ts { numShotsFired = numShotsFired ts + shotsFired }
+
+
+updateStatisticsTimeAlive :: Statistics -> Float -> [Tank] -> Statistics
+updateStatisticsTimeAlive stats dt tanksList = 
+    let
+        tankIdsAlive = map idTank $ filter isRobotAlive tanksList
+        updatedTankStats = map (updateTankTimeAlive tankIdsAlive) (statisticsByTank stats)
+    in
+        stats { statisticsByTank = updatedTankStats }
+  where
+    updateTankTimeAlive :: [Int] -> TankStatistics -> TankStatistics
+    updateTankTimeAlive tankIdsAlive ts =
+        if tankId ts `elem` tankIdsAlive
+            then ts { timeAlive = timeAlive ts + dt }
+            else ts

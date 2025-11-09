@@ -100,7 +100,7 @@ shootPostion t pos =
     vel = (cos radAngle * projectileSpeed, sin radAngle * projectileSpeed)
     --Para calcular la posicion del proyectil tenemos que ponerlo fuera del tanque, para que no cause una colision con el propio tanque
     proyectilPos = (fst tankPosition + cos radAngle * (tankLength/2), snd tankPosition + sin radAngle * (tankLength/2))
-    proyectile = Proyectile tankPosition projectileDamage (BaseObject proyectilPos vel angleToPosition) -- El angulo del proyectil es en grados
+    proyectile = Proyectile tankPosition projectileDamage (BaseObject proyectilPos vel angleToPosition) (idTank t) -- El angulo del proyectil es en grados
   in (newTank, [proyectile])
 
 

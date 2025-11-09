@@ -17,8 +17,8 @@ import Graphics.Gloss
 
 
 -- Esta función crea un nuevo GameState con numTanks tanques y una lista de proyectilis vacía
-newGameState :: Int -> IO GameState
-newGameState t = do
+newGameState :: Int -> [Statistics] -> IO GameState
+newGameState t stats = do
     maybeBackground <- loadJuicyPNG ("assets/Background_tile.png")
     projectileMaybePicture <- loadJuicyPNG ("assets/Projectile.png")
     explosionMaybePictures <- mapM (\i -> loadJuicyPNG ("assets/Explosion/Explosion_" ++ show i ++ ".png")) [1..10]
@@ -41,8 +41,16 @@ newGameState t = do
         
         projectilePicture = fromJust projectileMaybePicture
         explosionPictures = map fromJust explosionMaybePictures
+        statistics = Statistics {
+            tournamentId = t,
+            winnerId = Nothing,
+            duration = 0,
+            numTanksDestroyedByObstacles = 0,
+            statisticsByTank = [(TankStatistics (idTank tank) 0 0 0 0) | tank <- tankList],
+            writtenFlag = False
+        }
 
-    return $ GameState tankList proyectileList explosionList obstacleList worldSize gameTime winner background projectilePicture explosionPictures tournament
+    return $ GameState tankList proyectileList explosionList obstacleList worldSize gameTime winner background projectilePicture explosionPictures tournament statistics stats
 
 newObstacles :: IO [Obstacle]
 newObstacles = do

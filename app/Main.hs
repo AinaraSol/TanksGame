@@ -11,6 +11,7 @@ import Render
 import NewGame
 import Config
 import Tournaments
+import Statistics
 
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
@@ -18,7 +19,8 @@ import Graphics.Gloss.Data.Color
 
 main :: IO ()
 main = do
-    newState <- newGameState 1
+    clearStatisticsFile
+    newState <- newGameState 1 []
     playIO
         (InWindow "Tanks Game" (round getSizeX*2, round getSizeY*2) (0,0))
         black
