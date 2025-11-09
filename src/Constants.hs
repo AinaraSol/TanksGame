@@ -28,7 +28,7 @@ projectileDamage = 20
 numSimpleObstacles, numDamageObstacles, numSwirlObstacles, numMineObstacles :: Int
 numSimpleObstacles = 3
 numDamageObstacles = 2
-numSwirlObstacles = 10
+numSwirlObstacles = 1
 numMineObstacles = 4
 
 tileSize :: Float
