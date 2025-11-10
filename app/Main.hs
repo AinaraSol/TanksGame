@@ -10,7 +10,7 @@ import Collisions
 import Render
 import NewGame
 import Config
-import Tournaments
+import Torneos
 import Statistics
 
 import Graphics.Gloss
