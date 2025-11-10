@@ -90,8 +90,12 @@ drawWinner (Just (winId, winTime)) currentTime currentT maxT =
         text ("Tournament " ++ show currentT ++ "/" ++ show maxT),
       
       -- Texto principal (Centrado)
-      translate (-350) 10 $ scale 0.5 0.5 $ color white $
-        text ("The ship " ++ show winId ++ " won!"),
+      if winId == 99 then
+        translate (-340) 10 $ scale 0.5 0.5 $ color white $
+          text ("The match ended in a draw")
+      else
+        translate (-340) 10 $ scale 0.5 0.5 $ color white $
+          text ("The ship " ++ show winId ++ " won!"),
       
       -- Tiempo de victoria
       translate (-150) (-30) $ scale 0.2 0.2 $ color white $

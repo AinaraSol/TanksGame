@@ -31,7 +31,11 @@ runTournament dt gameState =
                 then do
                   -- REINICIAR con el siguiente torneo
                   putStrLn $ "\n=== Torneo " ++ show currentTournament ++ " finalizado ==="
-                  putStrLn $ "Ganador: Tanque " ++ show winId ++ " en tiempo " ++ show winTime ++ "s"
+                  if winId == 99 
+                    then do
+                      putStrLn $ "Empate en tiempo " ++ show winTime ++ "s"
+                    else do
+                      putStrLn $ "Ganador: Tanque " ++ show winId ++ " en tiempo " ++ show winTime ++ "s"
                   putStrLn $ "\n=== Iniciando Torneo " ++ show (currentTournament + 1) ++ " ==="
                   newGameState (currentTournament + 1) (totalStatistics gameState ++ [stats])
                 else do
