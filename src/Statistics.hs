@@ -27,14 +27,15 @@ formatStatistics stats =
                       Nothing  -> "No Hay Ganador\n"
         durationStr = "Duración: " ++ printf "%.2f" (duration stats) ++ " segundos\n"
         destroyedByObstaclesStr = "Tanques Destruidos por Obstáculos: " ++ show (numTanksDestroyedByObstacles stats) ++ "\n"
-        tankStatsStr = concatMap formatTankStatistics (statisticsByTank stats)
+        tankStatsStr = concatMap (\x -> formatTankStatistics x (duration stats) ) (statisticsByTank stats) 
     in header ++ winnerStr ++ durationStr ++ destroyedByObstaclesStr ++ "\n" ++ tankStatsStr ++ "\n"
 
 -- Formatear las estadísticas de un tanque individual
-formatTankStatistics :: TankStatistics -> String
-formatTankStatistics ts =
+formatTankStatistics :: TankStatistics -> Float -> String
+formatTankStatistics ts gameDuration =
     "\t== Barco " ++ show (tankId ts) ++ " ==\n" ++
     "\tTiempo Vivo: " ++ printf "%.2f" (timeAlive ts) ++ " segundos\n" ++
+    "\tPorcentaje de Tiempo con vida: " ++ printf "%.2f" (((timeAlive ts) / gameDuration) *100) ++ "%\n" ++   
     "\tDisparos Realizados: " ++ show (numShotsFired ts) ++ "\n" ++
     "\tImpactos: " ++ show (numHits ts) ++ "\n" ++
     "\tDaño Recibido de Obstáculos: " ++ show (damageFromObstacles ts) ++ "\n\n"

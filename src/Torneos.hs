@@ -1,4 +1,4 @@
-module Tournaments where
+module Torneos where
 
 import Entities
 import NewGame
