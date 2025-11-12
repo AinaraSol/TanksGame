@@ -45,3 +45,6 @@ getMaximumTime = maximunTime globalConfig
 
 getNumTournaments :: Int
 getNumTournaments = numTournaments globalConfig
+
+getBotsList :: [String]
+getBotsList = botsList globalConfig

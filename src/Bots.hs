@@ -26,12 +26,20 @@ import Data.Foldable (find)
 -- ('Main.hs') está "separado" de la lógica de IA ('Bots.hs').
 
 botRegistry :: [(Int, Bot)]
-botRegistry = [
-    (0, aggressiveBot)
-    ,(1, opportunistBot)
-    ,(2, chaserBot)
-    , (3, runnerBot)
-  ]
+botRegistry = [(i, bot) | (i, Just bot) <- zip [0..] (map stringToBot getBotsList) ]
+-- botRegistry = [
+--    (0, aggressiveBot)
+--    ,(1, opportunistBot)
+--    ,(2, chaserBot)
+--    , (3, runnerBot)
+--  ]
+
+stringToBot :: String -> Maybe Bot
+stringToBot "aggressiveBot" = Just aggressiveBot
+stringToBot "opportunistBot" = Just opportunistBot
+stringToBot "chaserBot" = Just chaserBot
+stringToBot "runnerBot" = Just runnerBot
+stringToBot _ = Nothing
 
 getBot :: GameState -> Tank -> [Action]
 getBot game self =
