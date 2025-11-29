@@ -6,7 +6,7 @@ import Config
 import System.IO.Unsafe (unsafePerformIO)
 
 globalConfig :: Config
-globalConfig = unsafePerformIO $ readConfig "Configuration/config.txt"
+globalConfig = unsafePerformIO $ readConfig
 
 numTanks :: Int
 numTanks = 5
