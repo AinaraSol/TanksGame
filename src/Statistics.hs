@@ -40,6 +40,29 @@ formatTankStatistics ts gameDuration =
     "\tImpactos: " ++ show (numHits ts) ++ "\n" ++
     "\tDaño Recibido de Obstáculos: " ++ show (damageFromObstacles ts) ++ "\n\n"
 
+
+-- Formatear estadísticas agregadas de todos los torneos
+formatAggregatedStatistics :: [Statistics] -> String
+formatAggregatedStatistics stats =
+    let mostWinsTankId = -- calcula el ID del tanque con más victorias
+            let allTankStats = concatMap statisticsByTank stats
+                winCounts = [(tankId ts, length (filter (\s -> winnerId s == Just (tankId ts)) stats)) | ts <- allTankStats]
+            in fst $ maximumBy (\(_, w1) (_, w2) -> compare w1 w2) winCounts
+        totalTime = sum $ map duration stats -- calcula la duración total de todos los torneos
+        totalDestroyedByObstacles = sum $ map numTanksDestroyedByObstacles stats -- total de tanques destruidos por obstáculos
+        
+        header = "\n=== Estadísticas Agregadas de Torneos ===\n"
+        numTournamentsStr = "Número Total de Torneos: " ++ show (length stats) ++ "\n"
+        mostWinsStr = "Barco con Más Victorias: Barco " ++ show mostWinsTankId ++ "\n"
+        totalTimeStr = "Duración Total de Todos los Torneos: " ++ printf "%.2f" totalTime ++ " segundos\n"
+        totalDestroyedStr = "Barcos Destruidos por Obstáculos: " ++ show totalDestroyedByObstacles ++ "\n\n"
+        
+        tankStatsHeader = "=== Estadísticas Agregadas por Barco ===\n\n"
+        tankIds = map tankId (statisticsByTank (head stats))
+        aggregatedStats = map (\tid -> aggregateTankStatistics (concatMap statisticsByTank stats) tid totalTime) tankIds
+        tankStatsStr = concatMap (\s -> formatTankAggregatedStatistics s totalTime (length stats)) aggregatedStats
+    in header ++ numTournamentsStr ++ mostWinsStr ++ totalTimeStr ++ totalDestroyedStr ++ tankStatsHeader ++ tankStatsStr
+
 -- Guardar estadísticas agregadas de todos los torneos
 saveAggregatedStatistics :: [Statistics] -> IO ()
 saveAggregatedStatistics stats = do
@@ -47,22 +70,7 @@ saveAggregatedStatistics stats = do
       then return ()
     else do
       let fileName = "estadisticas.txt"
-      let mostWinsTankId = -- calcula el ID del tanque con más victorias
-            let allTankStats = concatMap statisticsByTank stats
-                winCounts = [(tankId ts, length (filter (\s -> winnerId s == Just (tankId ts)) stats)) | ts <- allTankStats]
-            in fst $ maximumBy (\(_, w1) (_, w2) -> compare w1 w2) winCounts
-      let totalTime = sum $ map duration stats -- calcula la duración total de todos los torneos
-      let totalDestroyedByObstacles = sum $ map numTanksDestroyedByObstacles stats -- total de tanques destruidos por obstáculos
-      appendFile fileName $ "\n=== Estadísticas Agregadas de Torneos ===\n"
-      appendFile fileName $ "Número Total de Torneos: " ++ show (length stats) ++ "\n"
-      appendFile fileName $ "Barco con Más Victorias: Barco " ++ show mostWinsTankId ++ "\n"
-      appendFile fileName $ "Duración Total de Todos los Torneos: " ++ printf "%.2f" totalTime ++ " segundos\n"
-      appendFile fileName $ "Barcos Destruidos por Obstáculos: " ++ show totalDestroyedByObstacles ++ "\n\n"
-      appendFile fileName "=== Estadísticas Agregadas por Barco ===\n\n"
-      let tankIds = map tankId (statisticsByTank (head stats)) 
-      let aggregatedStats = map (\tid -> aggregateTankStatistics (concatMap statisticsByTank stats) tid totalTime) tankIds -- Calcula estadísticas agregadas por cada barco
-      let formattedStats = concatMap (\s -> formatTankAggregatedStatistics s totalTime (length stats)) aggregatedStats -- Convierte a string legible las estadísticas agregadas por cada barco
-      appendFile fileName formattedStats
+      appendFile fileName (formatAggregatedStatistics stats)
 
 -- Calcular estadísticas agregadas por barco
 aggregateTankStatistics :: [TankStatistics] -> Int -> Float -> TankStatistics

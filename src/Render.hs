@@ -4,9 +4,22 @@ import Constants
 import Entities
 import Tank
 import Graphics.Gloss
+import Statistics (aggregateTankStatistics, formatAggregatedStatistics)
 
 import Data.Maybe (fromMaybe)
 
+import Text.Printf (printf)
+
+
+-- Dibuja el juego normalmente, pero si ya han terminado todos los torneos, muestra la tabla de estadísticas
+drawOrStats :: GameState -> Picture
+drawOrStats gameState =
+    let maxTournaments = getNumTournaments
+        currentTournament = tournament gameState
+        allFinished = currentTournament >= maxTournaments && all writtenFlag (totalStatistics gameState)
+    in if allFinished && not (null (totalStatistics gameState))
+          then drawStatisticsTable (totalStatistics gameState)
+          else drawGame gameState
 
 drawGame :: GameState -> Picture   
 drawGame game = 
@@ -163,3 +176,18 @@ drawObstacle obstacle = Pictures [
                                then scale 0.1 0.1 obstaclePicture 
                                else obstaclePicture
         (posX, posY) = obstaclePosition obstacle
+
+-- Dibuja una tabla de estadísticas al finalizar el torneo
+
+
+drawStatisticsTable :: [Statistics] -> Picture
+drawStatisticsTable stats =
+  let
+    aggregatedStatsStr = formatAggregatedStatistics stats
+    -- Fondo semitransparente para la tabla
+    bg = translate 0 0 $ color (makeColor 0 0 0 0.7) $ rectangleSolid 800 400
+    statsStr = map (\(x,i) -> translate (-200) (320 - fromIntegral i * 12) $ scale 0.1 0.1 $ color white $ text x) (zip (lines aggregatedStatsStr) [0..])
+ 
+
+  in
+    Pictures ([bg] ++ statsStr)

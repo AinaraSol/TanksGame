@@ -38,14 +38,16 @@ runTournament dt gameState =
                       putStrLn $ "Ganador: Tanque " ++ show winId ++ " en tiempo " ++ show winTime ++ "s"
                   putStrLn $ "\n=== Iniciando Torneo " ++ show (currentTournament + 1) ++ " ==="
                   newGameState (currentTournament + 1) (totalStatistics gameState ++ [stats])
-                else do
-                  let newTotalStats = totalStatistics gameState ++ [stats]
-                  saveAggregatedStatistics newTotalStats
-                  -- Marcar estadísticas como escritas
-                  return gameState 
-                    { statistics = stats { writtenFlag = True }
-                    , totalStatistics = map (\s -> s { writtenFlag = True }) newTotalStats 
-                    }
+              else do
+                let 
+                  totalStats = totalStatistics gameState
+                  newTotalStats = if (length totalStats) <= maxTournaments then totalStats ++ [stats] else totalStats
+                saveAggregatedStatistics newTotalStats
+                -- Marcar estadísticas como escritas
+                return gameState 
+                  { statistics = stats { writtenFlag = True }
+                  , totalStatistics = map (\s -> s { writtenFlag = True }) newTotalStats 
+                  }
               else
                 -- Seguir mostrando la pantalla de victoria
                 return $ gameState { gameTime = gameTime gameState + dt }

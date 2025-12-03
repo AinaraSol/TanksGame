@@ -26,6 +26,6 @@ main = do
         black
         30
         newState
-        (return . drawGame)
-        handleInputIO 
+        (return . drawOrStats)
+        handleInputIO
         runTournament
