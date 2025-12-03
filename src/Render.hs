@@ -184,10 +184,51 @@ drawStatisticsTable :: [Statistics] -> Picture
 drawStatisticsTable stats =
   let
     aggregatedStatsStr = formatAggregatedStatistics stats
-    -- Fondo semitransparente para la tabla
-    bg = translate 0 0 $ color (makeColor 0 0 0 0.7) $ rectangleSolid 800 400
-    statsStr = map (\(x,i) -> translate (-200) (320 - fromIntegral i * 12) $ scale 0.1 0.1 $ color white $ text x) (zip (lines aggregatedStatsStr) [0..])
- 
+    allLines = lines aggregatedStatsStr
+    
+    -- Encontrar dónde empieza la sección de estadísticas por barco
+    tankStatsStartIndex = length $ takeWhile (not . (== "=== Estadísticas Agregadas por Barco ===")) allLines
+    
+    -- Dividir en header y estadísticas de barcos
+    headerLines = take (tankStatsStartIndex + 2) allLines  -- +2 para incluir el header y línea vacía
+    tankLines = drop (tankStatsStartIndex + 2) allLines
+    
+    -- Agrupar las líneas de cada barco (cada barco tiene 9 líneas)
+    groupTankLines :: [String] -> [[String]]
+    groupTankLines [] = []
+    groupTankLines ls = 
+      let (chunk, rest) = splitAt 9 ls
+      in chunk : groupTankLines rest
+    
+    tankGroups = groupTankLines tankLines
+    
+    -- Dividir en dos columnas
+    numTanks = length tankGroups
+    midPoint = (numTanks) `div` 2
+    leftColumn = take midPoint tankGroups
+    rightColumn = drop midPoint tankGroups
+    
+    -- Fondo semitransparente más ancho y alto
+    bg = translate 0 0 $ color (makeColor 0 0 0 0.7) $ rectangleSolid 1400 800
+    
+    -- Dibujar el header centrado con más espaciado
+    headerPictures = map (\(x,i) -> translate (-450) (280 - fromIntegral i * 18) $ scale 0.12 0.12 $ color white $ text x) (zip headerLines [0..])
+    
+    -- Dibujar columna izquierda de barcos con más espaciado vertical
+    leftColumnPictures = concat $ zipWith (\tankGroup groupIdx -> 
+        map (\(line, lineIdx) -> 
+          translate (-450) (280 - fromIntegral (length headerLines) * 18 - fromIntegral groupIdx * 180 - fromIntegral lineIdx * 18) $ 
+          scale 0.12 0.12 $ color white $ text line
+        ) (zip tankGroup [0..])
+      ) leftColumn [0..]
+    
+    -- Dibujar columna derecha de barcos con más espaciado vertical
+    rightColumnPictures = concat $ zipWith (\tankGroup groupIdx -> 
+        map (\(line, lineIdx) -> 
+          translate 150 (390 - fromIntegral (length headerLines) * 18 - fromIntegral groupIdx * 180 - fromIntegral lineIdx * 18) $ 
+          scale 0.12 0.12 $ color white $ text line
+        ) (zip tankGroup [0..])
+      ) rightColumn [0..]
 
   in
-    Pictures ([bg] ++ statsStr)
+    Pictures ([bg] ++ headerPictures ++ leftColumnPictures ++ rightColumnPictures)
